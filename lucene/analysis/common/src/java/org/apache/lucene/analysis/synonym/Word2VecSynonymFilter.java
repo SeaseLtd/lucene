@@ -21,6 +21,7 @@ import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.synonym.SynonymProvider.WeightedSynonym;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.search.BoostAttribute;
 
@@ -38,11 +39,12 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   public static final String TYPE_SYNONYM = "SYNONYM";
 
   private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
+  private final PositionIncrementAttribute posIncrAtt = addAttribute(PositionIncrementAttribute.class);
   private final BoostAttribute boostAtt = addAttribute(BoostAttribute.class);
   private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
 
   private final SynonymProvider synonymProvider;
-  private final boolean ignoreCase;
+  private final float accuracy;
 
   private final LinkedList<WeightedSynonym> outputBuffer = new LinkedList<>();
 
@@ -53,14 +55,12 @@ public final class Word2VecSynonymFilter extends TokenFilter {
    *
    * @param input input tokenstream
    * @param synonymProvider synonym provider
-   * @param ignoreCase case-folds input for matching with {@link Character#toLowerCase(int)}. Note,
-   *     if you set this to true, it's your responsibility to lowercase the input entries when you
-   *     create the {@link SynonymMap}
+   * @param accuracy minimal value of cosign similarity between the searched vector and the retrieved ones
    */
-  public Word2VecSynonymFilter(TokenStream input, SynonymProvider synonymProvider, boolean ignoreCase) {
+  public Word2VecSynonymFilter(TokenStream input, SynonymProvider synonymProvider, float accuracy) {
     super(input);
     this.synonymProvider = synonymProvider;
-    this.ignoreCase = ignoreCase;
+    this.accuracy = accuracy;
   }
 
   @Override
@@ -74,7 +74,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
 
     if(input.incrementToken()) {
       String term = new String(termAtt.buffer(), 0, termAtt.length());
-      outputBuffer.addAll(this.synonymProvider.getSynonyms(term, ignoreCase));
+      outputBuffer.addAll(this.synonymProvider.getSynonyms(term));
       return true;
     }
     return false;
@@ -87,6 +87,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
 
     termAtt.setEmpty();
     termAtt.append(synonym.getTerm());
+    posIncrAtt.setPositionIncrement(0);
     boostAtt.setBoost(synonym.getWeight());
     typeAtt.setType(TYPE_SYNONYM);
   }

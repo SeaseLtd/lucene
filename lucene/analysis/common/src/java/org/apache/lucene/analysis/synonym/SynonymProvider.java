@@ -4,8 +4,7 @@ import java.util.List;
 
 public interface SynonymProvider {
 
-    List<WeightedSynonym> getSynonyms(String term, boolean ignoreCase);
-
+    List<WeightedSynonym> getSynonyms(String term);
 
     class WeightedSynonym {
         private String term;

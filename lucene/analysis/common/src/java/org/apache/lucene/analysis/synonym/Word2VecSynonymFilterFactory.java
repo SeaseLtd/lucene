@@ -22,10 +22,18 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.util.ResourceLoader;
 import org.apache.lucene.util.ResourceLoaderAware;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Factory for {@link Word2VecSynonymFilter}.
@@ -39,16 +47,15 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
   /** SPI name */
   public static final String NAME = "Word2VecSynonym";
 
-  private final boolean ignoreCase;
+  private final float accuracy;
   private final String word2vecModel;
-  private final Map<String, String> tokArgs = new HashMap<>();
 
   private SynonymProvider synonymProvider = null;
 
   public Word2VecSynonymFilterFactory(Map<String, String> args) {
     super(args);
-    ignoreCase = getBoolean(args, "ignoreCase", false);
-    word2vecModel = require(args, "model");
+    this.accuracy = getFloat(args, "accuracy", 0.7f);
+    this.word2vecModel = require(args, "model");
 
     if (!args.isEmpty()) {
       throw new IllegalArgumentException("Unknown parameters: " + args);
@@ -63,13 +70,35 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
   @Override
   public TokenStream create(TokenStream input) {
     // if the synonymProvider is null, it means there's actually no synonyms... just return the original stream
-    return synonymProvider == null ? input : new Word2VecSynonymFilter(input, synonymProvider, ignoreCase);
+    return synonymProvider == null ? input : new Word2VecSynonymFilter(input, synonymProvider, accuracy);
   }
 
   @Override
   public void inform(ResourceLoader loader) throws IOException {
-    try(InputStream modelInputStream = loader.openResource(word2vecModel)){
-      synonymProvider = new Word2VecSynonymProvider(modelInputStream);
+
+    try(InputStream stream = loader.openResource(word2vecModel)) {
+      List<SynonymTerm> terms = loadWordVectors(stream);
+      synonymProvider = new Word2VecSynonymProvider(terms, accuracy);
+    }
+  }
+
+  private static List<SynonymTerm> loadWordVectors(InputStream stream) throws IOException {
+
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+      return reader.lines()
+              .skip(1)
+              .map(line -> {
+                String[] tokens = line.split(" ");
+                String word = tokens[0];
+
+                float[] vector = new float[tokens.length - 1];
+                for (int i = 1; i < tokens.length - 1; i++) {
+                  vector[i] = Float.parseFloat(tokens[i]);
+                }
+
+                return new SynonymTerm(word, vector);
+              })
+              .collect(Collectors.toList());
     }
   }
 
