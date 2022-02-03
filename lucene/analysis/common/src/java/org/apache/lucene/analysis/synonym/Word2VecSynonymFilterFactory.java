@@ -26,14 +26,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.zip.GZIPInputStream;
 
 /**
  * Factory for {@link Word2VecSynonymFilter}.
@@ -77,12 +72,12 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
   public void inform(ResourceLoader loader) throws IOException {
 
     try(InputStream stream = loader.openResource(word2vecModel)) {
-      List<SynonymTerm> terms = loadWordVectors(stream);
+      List<Word2VecSynonymTerm> terms = loadWordVectors(stream);
       synonymProvider = new Word2VecSynonymProvider(terms, accuracy);
     }
   }
 
-  private static List<SynonymTerm> loadWordVectors(InputStream stream) throws IOException {
+  private static List<Word2VecSynonymTerm> loadWordVectors(InputStream stream) throws IOException {
 
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
       return reader.lines()
@@ -96,7 +91,7 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
                   vector[i] = Float.parseFloat(tokens[i]);
                 }
 
-                return new SynonymTerm(word, vector);
+                return new Word2VecSynonymTerm(word, vector);
               })
               .collect(Collectors.toList());
     }

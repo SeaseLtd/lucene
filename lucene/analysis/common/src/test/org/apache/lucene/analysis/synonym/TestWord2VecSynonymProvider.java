@@ -13,9 +13,9 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
     private SynonymProvider unit;
 
     public TestWord2VecSynonymProvider() throws IOException {
-        List<SynonymTerm> terms = List.of(
-                new SynonymTerm("a", new float[]{0.24f, 0.78f, 0.28f}),
-                new SynonymTerm("b", new float[]{0.44f, 0.01f, 0.81f}));
+        List<Word2VecSynonymTerm> terms = List.of(
+                new Word2VecSynonymTerm("a", new float[]{0.24f, 0.78f, 0.28f}),
+                new Word2VecSynonymTerm("b", new float[]{0.44f, 0.01f, 0.81f}));
         unit = new Word2VecSynonymProvider(terms);
     }
 
@@ -33,9 +33,9 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
 
     @Test
     public void testConstructorWrongAccuracy(){
-        List<SynonymTerm> terms = List.of(
-                new SynonymTerm("a", new float[]{0.24f, 0.78f, 0.28f}),
-                new SynonymTerm("b", new float[]{0.44f, 0.01f, 0.81f}));
+        List<Word2VecSynonymTerm> terms = List.of(
+                new Word2VecSynonymTerm("a", new float[]{0.24f, 0.78f, 0.28f}),
+                new Word2VecSynonymTerm("b", new float[]{0.44f, 0.01f, 0.81f}));
         expectThrows(IllegalArgumentException.class,
                 () -> new Word2VecSynonymProvider(terms, 0));
         expectThrows(IllegalArgumentException.class,
@@ -53,13 +53,13 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
     @Test
     public void testSimilaritySearch() throws Exception {
 
-        List<SynonymTerm> terms = List.of(
-                new SynonymTerm("a", new float[]{10, 10}),
-                new SynonymTerm("b", new float[]{10, 9}),
-                new SynonymTerm("c", new float[]{9, 10}),
-                new SynonymTerm("d", new float[]{1, 1}),
-                new SynonymTerm("e", new float[]{99, 101}),
-                new SynonymTerm("f", new float[]{1, 10}));
+        List<Word2VecSynonymTerm> terms = List.of(
+                new Word2VecSynonymTerm("a", new float[]{10, 10}),
+                new Word2VecSynonymTerm("b", new float[]{10, 9}),
+                new Word2VecSynonymTerm("c", new float[]{9, 10}),
+                new Word2VecSynonymTerm("d", new float[]{1, 1}),
+                new Word2VecSynonymTerm("e", new float[]{99, 101}),
+                new Word2VecSynonymTerm("f", new float[]{-1, 10}));
 
         SynonymProvider unit = new Word2VecSynonymProvider(terms);
 

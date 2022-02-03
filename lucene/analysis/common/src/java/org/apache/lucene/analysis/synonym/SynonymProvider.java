@@ -1,11 +1,23 @@
 package org.apache.lucene.analysis.synonym;
 
+import java.io.IOException;
 import java.util.List;
 
+
+/**
+ * Generic synonym provider
+ *
+ * @lucene.experimental
+ */
 public interface SynonymProvider {
 
-    List<WeightedSynonym> getSynonyms(String term);
+    List<WeightedSynonym> getSynonyms(String term) throws IOException;
 
+    /**
+     * Term with the associated weight
+     *
+     * @lucene.experimental
+     */
     class WeightedSynonym {
         private String term;
         private float weight;

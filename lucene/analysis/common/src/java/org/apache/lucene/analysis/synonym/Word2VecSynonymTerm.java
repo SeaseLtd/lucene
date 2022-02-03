@@ -1,11 +1,16 @@
 package org.apache.lucene.analysis.synonym;
 
-public class SynonymTerm {
+/**
+ * Word2Vec unit composed by a term with the associated vector
+ *
+ * @lucene.experimental
+ */
+public class Word2VecSynonymTerm {
 
     private final String word;
     private final float[] vector;
 
-    public SynonymTerm(String word, float[] vector){
+    public Word2VecSynonymTerm(String word, float[] vector){
         this.word = word;
         this.vector = vector;
     }

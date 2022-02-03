@@ -22,11 +22,13 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.synonym.SynonymProvider.WeightedSynonym;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
+import org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.search.BoostAttribute;
 
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.List;
 
 
 /**
@@ -40,6 +42,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
 
   private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
   private final PositionIncrementAttribute posIncrAtt = addAttribute(PositionIncrementAttribute.class);
+  private final PositionLengthAttribute posLenAtt = addAttribute(PositionLengthAttribute.class);
   private final BoostAttribute boostAtt = addAttribute(BoostAttribute.class);
   private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
 
@@ -74,7 +77,12 @@ public final class Word2VecSynonymFilter extends TokenFilter {
 
     if(input.incrementToken()) {
       String term = new String(termAtt.buffer(), 0, termAtt.length());
-      outputBuffer.addAll(this.synonymProvider.getSynonyms(term));
+      List<WeightedSynonym> synonyms = this.synonymProvider.getSynonyms(term);
+      if (synonyms.size() > 0) {
+        outputBuffer.addAll(synonyms);
+        // there are other synonyms starting from the same position
+        posIncrAtt.setPositionIncrement(0);
+      }
       return true;
     }
     return false;
@@ -87,9 +95,13 @@ public final class Word2VecSynonymFilter extends TokenFilter {
 
     termAtt.setEmpty();
     termAtt.append(synonym.getTerm());
-    posIncrAtt.setPositionIncrement(0);
     boostAtt.setBoost(synonym.getWeight());
     typeAtt.setType(TYPE_SYNONYM);
+    posLenAtt.setPositionLength(1);
+
+    // if there are no more pending synonyms, we can move forward in the graph
+    int increment = outputBuffer.isEmpty()? 1 : 0;
+    posIncrAtt.setPositionIncrement(increment);
   }
 
 
