@@ -13,12 +13,10 @@ import org.apache.lucene.util.hnsw.NeighborQueue;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableMap;
-import java.util.SplittableRandom;
-import java.util.TreeMap;
 
 /**
  * Implementation of a {@link SynonymProvider} using vector similarity technique
@@ -27,14 +25,14 @@ import java.util.TreeMap;
  */
 public class Word2VecSynonymProvider implements SynonymProvider {
 
-    public static final double DEFAULT_ACCURACY = 0.7;
+    public static final float DEFAULT_ACCURACY = 0.7f;
     public static final VectorSimilarityFunction similarityFunction = VectorSimilarityFunction.COSINE;
     public static final int maxConn = 16;
     public static final int beamWidth = 10;
     public static final long seed = 42;
 
     private final int dimension;
-    private final double accuracy;
+    private final float accuracy;
 
     private final VectorProvider vectors;
     private final HnswGraph hnswGraph;
@@ -44,7 +42,13 @@ public class Word2VecSynonymProvider implements SynonymProvider {
         this(vectorData, DEFAULT_ACCURACY);
     }
 
-    public Word2VecSynonymProvider(List<Word2VecSynonymTerm> vectorData, double accuracy) throws IOException {
+    /**
+     * SynonymProvider constructor
+     *
+     * @param vectorData list of SynonymTerms
+     * @param accuracy minimal value of cosign similarity between the searched vector and the retrieved ones
+     */
+    public Word2VecSynonymProvider(List<Word2VecSynonymTerm> vectorData, float accuracy) throws IOException {
         if (vectorData == null){
             throw new IllegalArgumentException("VectorData must be set");
         }
@@ -85,11 +89,13 @@ public class Word2VecSynonymProvider implements SynonymProvider {
                 int id = neighbor.pop();
                 Word2VecSynonymTerm term = vectors.getSynonymTerm(id);
                 float similarity = similarityFunction.compare(term.getVector(), query);
-                System.out.println("id: " + id + " word: " + term.getWord() + " similarity:" + similarity);
-                if (similarity >= this.accuracy) {
+                if (!term.getWord().equals(token) && similarity >= this.accuracy) {
                     result.add(new WeightedSynonym(term.getWord(), similarity));
                 }
             }
+            // higher similarity comes first
+            result.sort((o1, o2) -> Float.compare(o2.getWeight(), o1.getWeight()));
+            result.forEach(s -> System.out.println("term: " + s.toString()));
         }
         return result;
     }

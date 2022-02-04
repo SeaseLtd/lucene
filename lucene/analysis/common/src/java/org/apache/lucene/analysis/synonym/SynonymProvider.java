@@ -19,8 +19,8 @@ public interface SynonymProvider {
      * @lucene.experimental
      */
     class WeightedSynonym {
-        private String term;
-        private float weight;
+        private final String term;
+        private final float weight;
 
         public WeightedSynonym(String term, float weight) {
             this.term = term;
@@ -33,6 +33,14 @@ public interface SynonymProvider {
 
         public float getWeight() {
             return weight;
+        }
+
+        @Override
+        public String toString() {
+            return "WeightedSynonym{" +
+                    "term='" + term + '\'' +
+                    ", weight=" + weight +
+                    '}';
         }
     }
 }

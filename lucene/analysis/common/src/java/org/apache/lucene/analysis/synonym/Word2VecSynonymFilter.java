@@ -47,23 +47,18 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
 
   private final SynonymProvider synonymProvider;
-  private final float accuracy;
-
   private final LinkedList<WeightedSynonym> outputBuffer = new LinkedList<>();
-
-
+  private State lastState = null;
 
   /**
    * Apply previously built synonymProvider to incoming tokens.
    *
    * @param input input tokenstream
    * @param synonymProvider synonym provider
-   * @param accuracy minimal value of cosign similarity between the searched vector and the retrieved ones
    */
-  public Word2VecSynonymFilter(TokenStream input, SynonymProvider synonymProvider, float accuracy) {
+  public Word2VecSynonymFilter(TokenStream input, SynonymProvider synonymProvider) {
     super(input);
     this.synonymProvider = synonymProvider;
-    this.accuracy = accuracy;
   }
 
   @Override
@@ -79,9 +74,10 @@ public final class Word2VecSynonymFilter extends TokenFilter {
       String term = new String(termAtt.buffer(), 0, termAtt.length());
       List<WeightedSynonym> synonyms = this.synonymProvider.getSynonyms(term);
       if (synonyms.size() > 0) {
-        outputBuffer.addAll(synonyms);
+        this.lastState = captureState();
+        this.outputBuffer.addAll(synonyms);
         // there are other synonyms starting from the same position
-        posIncrAtt.setPositionIncrement(0);
+//        posIncrAtt.setPositionIncrement(0);
       }
       return true;
     }
@@ -89,10 +85,12 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   }
 
 
-  private void releaseBufferedToken() throws IOException {
+  private void releaseBufferedToken() {
+    assert outputBuffer.size() > 0;
 
     WeightedSynonym synonym = outputBuffer.pollFirst();
-
+    clearAttributes();
+    restoreState(this.lastState);
     termAtt.setEmpty();
     termAtt.append(synonym.getTerm());
     boostAtt.setBoost(synonym.getWeight());
@@ -100,8 +98,8 @@ public final class Word2VecSynonymFilter extends TokenFilter {
     posLenAtt.setPositionLength(1);
 
     // if there are no more pending synonyms, we can move forward in the graph
-    int increment = outputBuffer.isEmpty()? 1 : 0;
-    posIncrAtt.setPositionIncrement(increment);
+//    int increment = outputBuffer.isEmpty()? 1 : 0;
+    posIncrAtt.setPositionIncrement(0);
   }
 
 

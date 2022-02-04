@@ -1,16 +1,18 @@
 package org.apache.lucene.analysis.synonym;
 
+import org.apache.lucene.analysis.synonym.SynonymProvider.WeightedSynonym;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TestWord2VecSynonymProvider extends LuceneTestCase {
 
-    private SynonymProvider unit;
+    private final SynonymProvider unit;
 
     public TestWord2VecSynonymProvider() throws IOException {
         List<Word2VecSynonymTerm> terms = List.of(
@@ -39,9 +41,9 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
         expectThrows(IllegalArgumentException.class,
                 () -> new Word2VecSynonymProvider(terms, 0));
         expectThrows(IllegalArgumentException.class,
-                () -> new Word2VecSynonymProvider(terms, -0.4));
+                () -> new Word2VecSynonymProvider(terms, -0.4f));
         expectThrows(IllegalArgumentException.class,
-                () -> new Word2VecSynonymProvider(terms, 1.01));
+                () -> new Word2VecSynonymProvider(terms, 1.01f));
     }
 
     @Test
@@ -63,9 +65,11 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
 
         SynonymProvider unit = new Word2VecSynonymProvider(terms);
 
-        Set<String> synonyms = unit.getSynonyms("a").stream()
-                        .map(s -> s.getTerm())
-                        .collect(Collectors.toSet());
+        Set<String> synonyms = new HashSet<>();
+        for (WeightedSynonym s : unit.getSynonyms("a")) {
+            String term = s.getTerm();
+            synonyms.add(term);
+        }
 
         assertEquals(5, synonyms.size());
         assertTrue(synonyms.contains("a"));

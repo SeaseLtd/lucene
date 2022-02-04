@@ -34,8 +34,6 @@ import java.util.stream.Collectors;
  * Factory for {@link Word2VecSynonymFilter}.
  *
  * @lucene.experimental
- * @since 6.4.0
- * @lucene.spi {@value #NAME}
  */
 public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements ResourceLoaderAware {
 
@@ -65,7 +63,7 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
   @Override
   public TokenStream create(TokenStream input) {
     // if the synonymProvider is null, it means there's actually no synonyms... just return the original stream
-    return synonymProvider == null ? input : new Word2VecSynonymFilter(input, synonymProvider, accuracy);
+    return synonymProvider == null ? input : new Word2VecSynonymFilter(input, synonymProvider);
   }
 
   @Override
