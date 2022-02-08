@@ -8,11 +8,10 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class TestWord2VecSynonymProvider extends LuceneTestCase {
 
-    private final SynonymProvider unit;
+    private final Word2VecSynonymProvider unit;
 
     public TestWord2VecSynonymProvider() throws IOException {
         List<Word2VecSynonymTerm> terms = List.of(
@@ -71,8 +70,7 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
             synonyms.add(term);
         }
 
-        assertEquals(5, synonyms.size());
-        assertTrue(synonyms.contains("a"));
+        assertEquals(4, synonyms.size());
         assertTrue(synonyms.contains("b"));
         assertTrue(synonyms.contains("c"));
         assertTrue(synonyms.contains("d"));

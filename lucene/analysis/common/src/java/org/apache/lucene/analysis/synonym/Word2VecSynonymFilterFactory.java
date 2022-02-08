@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
  * Factory for {@link Word2VecSynonymFilter}.
  *
  * @lucene.experimental
+ * @lucene.spi {@value #NAME}
  */
 public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements ResourceLoaderAware {
 
