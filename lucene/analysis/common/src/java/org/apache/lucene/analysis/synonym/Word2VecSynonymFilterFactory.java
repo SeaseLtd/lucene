@@ -22,13 +22,18 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.util.ResourceLoader;
 import org.apache.lucene.util.ResourceLoaderAware;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * Factory for {@link Word2VecSynonymFilter}.
@@ -40,6 +45,8 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
 
   /** SPI name */
   public static final String NAME = "Word2VecSynonym";
+
+  private static final String MODEL_FILE_NAME_PREFIX = "syn0";
 
   private final float accuracy;
   private final String word2vecModel;
@@ -61,6 +68,10 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
     throw defaultCtorException();
   }
 
+  SynonymProvider getSynonymProvider(){
+    return this.synonymProvider;
+  }
+
   @Override
   public TokenStream create(TokenStream input) {
     // if the synonymProvider is null, it means there's actually no synonyms... just return the original stream
@@ -76,24 +87,40 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
     }
   }
 
-  private static List<Word2VecSynonymTerm> loadWordVectors(InputStream stream) throws IOException {
+  List<Word2VecSynonymTerm> loadWordVectors(InputStream stream) throws IOException {
 
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-      return reader.lines()
-              .skip(1)
-              .map(line -> {
-                String[] tokens = line.split(" ");
-                String word = tokens[0];
+    try (ZipInputStream zipfile = new ZipInputStream(new BufferedInputStream(stream))) {
 
-                float[] vector = new float[tokens.length - 1];
-                for (int i = 1; i < tokens.length - 1; i++) {
-                  vector[i] = Float.parseFloat(tokens[i]);
-                }
+      ZipEntry entry;
+      while ((entry = zipfile.getNextEntry()) != null) {
+        String name = entry.getName();
+        if (name.startsWith(MODEL_FILE_NAME_PREFIX)) {
+          BufferedReader reader = new BufferedReader(new InputStreamReader(zipfile));
+          return reader.lines()
+                  .skip(1)
+                  .map(line -> {
+                    String[] tokens = line.split(" ");
+                    String word = decode(tokens[0]);
 
-                return new Word2VecSynonymTerm(word, vector);
-              })
-              .collect(Collectors.toList());
+                    float[] vector = new float[tokens.length - 1];
+                    for (int i = 0; i < tokens.length - 1; i++) {
+                      vector[i] = Float.parseFloat(tokens[i + 1]);
+                    }
+                    return new Word2VecSynonymTerm(word, vector);
+                  })
+                  .collect(Collectors.toList());
+        }
+      }
+      throw new UnsupportedEncodingException("The ZIP file '" + word2vecModel + "' does not contain any "
+              + MODEL_FILE_NAME_PREFIX + " file");
     }
+  }
+
+  private String decode(String term) {
+    if(term.startsWith("B64:")) {
+      return new String(Base64.getDecoder().decode(term.substring(4).trim()));
+    }
+    return term;
   }
 
 }

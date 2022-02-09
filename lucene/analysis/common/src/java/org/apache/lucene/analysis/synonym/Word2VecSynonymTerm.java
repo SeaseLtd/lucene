@@ -29,7 +29,8 @@ public class Word2VecSynonymTerm {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("[");
+        StringBuilder builder = new StringBuilder(this.word);
+        builder.append(" [");
         if( vector.length > 0) {
             for (int i = 0; i < vector.length - 1; i++) {
                 builder.append(String.format("%.3f,", vector[i]));
