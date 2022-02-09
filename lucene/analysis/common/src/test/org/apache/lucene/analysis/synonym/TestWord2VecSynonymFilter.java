@@ -35,7 +35,7 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
 
   public void testBasicOutput() throws Exception {
 
-    Analyzer a = getAnalyzer(createSynonymProvider(0.8f));
+    Analyzer a = getAnalyzer(createSynonymProvider(10, 0.8f));
     assertAnalyzesTo(
             a,
             "pre a post",
@@ -61,7 +61,7 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
     };
   }
 
-  private SynonymProvider createSynonymProvider(float accuracy) throws IOException {
+  private SynonymProvider createSynonymProvider(int maxResult, float accuracy) throws IOException {
     List<Word2VecSynonymTerm> terms = List.of(
             new Word2VecSynonymTerm("a", new float[]{10, 10}),
             new Word2VecSynonymTerm("b", new float[]{10, 8}),
@@ -70,7 +70,7 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
             new Word2VecSynonymTerm("e", new float[]{99, 101}),
             new Word2VecSynonymTerm("f", new float[]{1, 10}));
 
-    return new Word2VecSynonymProvider(terms, accuracy);
+    return new Word2VecSynonymProvider(terms, maxResult, accuracy);
   }
 
 }

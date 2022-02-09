@@ -11,25 +11,28 @@ import java.util.Set;
 
 public class TestWord2VecSynonymProvider extends LuceneTestCase {
 
+    private static final int MAX_RESULT = 10;
+    private static final float ACCURACY = 0.7f;
+
     private final Word2VecSynonymProvider unit;
 
     public TestWord2VecSynonymProvider() throws IOException {
         List<Word2VecSynonymTerm> terms = List.of(
                 new Word2VecSynonymTerm("a", new float[]{0.24f, 0.78f, 0.28f}),
                 new Word2VecSynonymTerm("b", new float[]{0.44f, 0.01f, 0.81f}));
-        unit = new Word2VecSynonymProvider(terms);
+        unit = new Word2VecSynonymProvider(terms, MAX_RESULT, ACCURACY);
     }
 
     @Test
     public void testConstructorNullVector(){
         expectThrows(IllegalArgumentException.class,
-                () -> new Word2VecSynonymProvider(null));
+                () -> new Word2VecSynonymProvider(null, MAX_RESULT, ACCURACY));
     }
 
     @Test
     public void testConstructorEmptyVector(){
         expectThrows(IllegalArgumentException.class,
-                () -> new Word2VecSynonymProvider(List.of()));
+                () -> new Word2VecSynonymProvider(List.of(), MAX_RESULT, ACCURACY));
     }
 
     @Test
@@ -38,11 +41,11 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
                 new Word2VecSynonymTerm("a", new float[]{0.24f, 0.78f, 0.28f}),
                 new Word2VecSynonymTerm("b", new float[]{0.44f, 0.01f, 0.81f}));
         expectThrows(IllegalArgumentException.class,
-                () -> new Word2VecSynonymProvider(terms, 0));
+                () -> new Word2VecSynonymProvider(terms, MAX_RESULT, 0));
         expectThrows(IllegalArgumentException.class,
-                () -> new Word2VecSynonymProvider(terms, -0.4f));
+                () -> new Word2VecSynonymProvider(terms, MAX_RESULT, -0.4f));
         expectThrows(IllegalArgumentException.class,
-                () -> new Word2VecSynonymProvider(terms, 1.01f));
+                () -> new Word2VecSynonymProvider(terms, MAX_RESULT, 1.01f));
     }
 
     @Test
@@ -62,7 +65,7 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
                 new Word2VecSynonymTerm("e", new float[]{99, 101}),
                 new Word2VecSynonymTerm("f", new float[]{-1, 10}));
 
-        SynonymProvider unit = new Word2VecSynonymProvider(terms);
+        SynonymProvider unit = new Word2VecSynonymProvider(terms, MAX_RESULT, ACCURACY);
 
         Set<String> synonyms = new HashSet<>();
         for (WeightedSynonym s : unit.getSynonyms("a")) {

@@ -76,8 +76,6 @@ public final class Word2VecSynonymFilter extends TokenFilter {
       if (synonyms.size() > 0) {
         this.lastState = captureState();
         this.outputBuffer.addAll(synonyms);
-        // there are other synonyms starting from the same position
-//        posIncrAtt.setPositionIncrement(0);
       }
       return true;
     }
@@ -96,9 +94,6 @@ public final class Word2VecSynonymFilter extends TokenFilter {
     boostAtt.setBoost(synonym.getWeight());
     typeAtt.setType(TYPE_SYNONYM);
     posLenAtt.setPositionLength(1);
-
-    // if there are no more pending synonyms, we can move forward in the graph
-//    int increment = outputBuffer.isEmpty()? 1 : 0;
     posIncrAtt.setPositionIncrement(0);
   }
 

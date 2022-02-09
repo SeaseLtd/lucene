@@ -17,15 +17,15 @@
 
 package org.apache.lucene.analysis.synonym;
 
-import org.apache.lucene.analysis.CharArraySet;
-import org.apache.lucene.analysis.core.StopFilterFactory;
-import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import com.sun.source.tree.AssertTree;
+import org.apache.lucene.analysis.synonym.SynonymProvider.WeightedSynonym;
 import org.apache.lucene.tests.analysis.BaseTokenStreamFactoryTestCase;
 import org.apache.lucene.util.ClasspathResourceLoader;
 import org.apache.lucene.util.ResourceLoader;
 
 import java.io.InputStream;
 import java.util.List;
+
 
 public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTestCase {
 
@@ -39,19 +39,22 @@ public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTest
 
     InputStream stream = TestWord2VecSynonymFilterFactory.class.getResourceAsStream(WORD2VEC_MODEL_FILE);
     List<Word2VecSynonymTerm> terms = factory.loadWordVectors(stream);
+    for (Word2VecSynonymTerm term : terms) {
+      System.out.println(term.getWord());
+    }
     assertEquals(235, terms.size());
     assertEquals(100, terms.get(0).getVector().length);
-
   }
 
   public void testInform() throws Exception {
     ResourceLoader loader = new ClasspathResourceLoader(getClass());
     assertTrue("loader is null and it shouldn't be", loader != null);
     Word2VecSynonymFilterFactory factory =
-            (Word2VecSynonymFilterFactory) tokenFilterFactory(FACTORY_NAME, "model", WORD2VEC_MODEL_FILE);
+            (Word2VecSynonymFilterFactory) tokenFilterFactory(FACTORY_NAME,
+                    "model", WORD2VEC_MODEL_FILE,
+                    "accuracy", "0.7");
 
-    SynonymProvider synonyms = factory.getSynonymProvider();
-    synonyms.getSynonyms("house");
-
+    SynonymProvider synonymProvider = factory.getSynonymProvider();
+    assertNotEquals(null, synonymProvider);
   }
 }

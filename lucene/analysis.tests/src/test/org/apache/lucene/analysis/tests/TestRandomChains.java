@@ -433,7 +433,7 @@ public class TestRandomChains extends BaseTokenStreamTestCase {
                             terms.add(new Word2VecSynonymTerm(s, vec));
                         }
                         try {
-                            return new Word2VecSynonymProvider(terms);
+                            return new Word2VecSynonymProvider(terms, 10, 0.7f);
                         } catch (IOException e) {
                             Rethrow.rethrow(e);
                             return null; // unreachable code

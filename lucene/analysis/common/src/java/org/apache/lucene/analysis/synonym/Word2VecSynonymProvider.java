@@ -1,7 +1,6 @@
 package org.apache.lucene.analysis.synonym;
 
 
-import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.RandomAccessVectorValues;
 import org.apache.lucene.index.RandomAccessVectorValuesProducer;
 import org.apache.lucene.index.VectorSimilarityFunction;
@@ -13,7 +12,6 @@ import org.apache.lucene.util.hnsw.NeighborQueue;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,30 +23,26 @@ import java.util.Map;
  */
 public class Word2VecSynonymProvider implements SynonymProvider {
 
-    public static final float DEFAULT_ACCURACY = 0.7f;
     public static final VectorSimilarityFunction similarityFunction = VectorSimilarityFunction.COSINE;
-    public static final int maxConn = 16;
-    public static final int beamWidth = 10;
-    public static final long seed = 42;
+    public static final int MAX_CONN = 16;
+    public static final int BEAM_WIDTH = 10;
+    public static final long SEED = 42;
 
-    private final int dimension;
+    private final int maxResult;
     private final float accuracy;
 
     private final VectorProvider vectors;
     private final HnswGraph hnswGraph;
 
-
-    public Word2VecSynonymProvider(List<Word2VecSynonymTerm> vectorData) throws IOException {
-        this(vectorData, DEFAULT_ACCURACY);
-    }
-
     /**
      * SynonymProvider constructor
      *
      * @param vectorData list of SynonymTerms
+     * @param maxResult maximum number of result returned by the synonym search
      * @param accuracy minimal value of cosign similarity between the searched vector and the retrieved ones
      */
-    public Word2VecSynonymProvider(List<Word2VecSynonymTerm> vectorData, float accuracy) throws IOException {
+    public Word2VecSynonymProvider(List<Word2VecSynonymTerm> vectorData, int maxResult, float accuracy) throws IOException {
+
         if (vectorData == null){
             throw new IllegalArgumentException("VectorData must be set");
         }
@@ -59,16 +53,23 @@ public class Word2VecSynonymProvider implements SynonymProvider {
             throw new IllegalArgumentException("Accuracy must be in the range (0, 1]. Found: " + accuracy);
         }
         this.accuracy = accuracy;
-        this.dimension = vectorData.get(0).size();
+        this.maxResult = maxResult;
+
+        long startTime = System.currentTimeMillis();
 
         // Create the provider which will feed the vectors for the graph
         vectors = new VectorProvider(vectorData);
-        HnswGraphBuilder builder = new HnswGraphBuilder(vectors, similarityFunction, maxConn, beamWidth, seed);
+        HnswGraphBuilder builder = new HnswGraphBuilder(vectors, similarityFunction, MAX_CONN, BEAM_WIDTH, SEED);
         this.hnswGraph = builder.build(vectors);
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("HnswGraph Builder - Elapsed time: " + (endTime-startTime) + " ms (" + ((endTime-startTime)/60000) + " min)");
     }
 
     @Override
     public List<WeightedSynonym> getSynonyms(String token) throws IOException {
+        long startTime = System.currentTimeMillis();
+
         if (token == null) {
             throw new IllegalArgumentException("Term must not be null");
         }
@@ -77,13 +78,12 @@ public class Word2VecSynonymProvider implements SynonymProvider {
         if (query != null) {
             NeighborQueue neighbor = HnswGraph.search(
                     query,
-                    10,
+                    maxResult,
                     vectors,
                     similarityFunction,
                     hnswGraph,
                     null);
 
-            System.out.println("neighbor size: " + neighbor.size() + " Top:" + neighbor.topNode());
             int size = neighbor.size();
             for(int i = 0; i < size; i++){
                 int id = neighbor.pop();
@@ -97,6 +97,8 @@ public class Word2VecSynonymProvider implements SynonymProvider {
             result.sort((o1, o2) -> Float.compare(o2.getWeight(), o1.getWeight()));
             result.forEach(s -> System.out.println("term: " + s.toString()));
         }
+        long endTime = System.currentTimeMillis();
+        System.out.println("getSynonyms - Found " + result.size() + " terms - Elapsed time: " + (endTime-startTime) + " ms (" + ((endTime-startTime)/60000) + " min)");
         return result;
     }
 
