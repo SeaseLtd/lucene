@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.lucene.analysis.synonym;
 
 
@@ -11,8 +28,8 @@ import org.apache.lucene.util.hnsw.HnswGraphBuilder;
 import org.apache.lucene.util.hnsw.NeighborQueue;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -73,7 +90,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
         if (token == null) {
             throw new IllegalArgumentException("Term must not be null");
         }
-        ArrayList<WeightedSynonym> result = new ArrayList<>();
+        LinkedList<WeightedSynonym> result = new LinkedList<>();
         float[] query = vectors.vectorValue(token);
         if (query != null) {
             NeighborQueue neighbor = HnswGraph.search(
@@ -90,12 +107,9 @@ public class Word2VecSynonymProvider implements SynonymProvider {
                 Word2VecSynonymTerm term = vectors.getSynonymTerm(id);
                 float similarity = similarityFunction.compare(term.getVector(), query);
                 if (!term.getWord().equals(token) && similarity >= this.accuracy) {
-                    result.add(new WeightedSynonym(term.getWord(), similarity));
+                    result.addFirst(new WeightedSynonym(term.getWord(), similarity));
                 }
             }
-            // higher similarity comes first
-            result.sort((o1, o2) -> Float.compare(o2.getWeight(), o1.getWeight()));
-            result.forEach(s -> System.out.println("term: " + s.toString()));
         }
         long endTime = System.currentTimeMillis();
         System.out.println("getSynonyms - Found " + result.size() + " terms - Elapsed time: " + (endTime-startTime) + " ms (" + ((endTime-startTime)/60000) + " min)");

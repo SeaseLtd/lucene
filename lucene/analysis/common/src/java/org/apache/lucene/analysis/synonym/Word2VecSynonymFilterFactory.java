@@ -22,18 +22,10 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.util.ResourceLoader;
 import org.apache.lucene.util.ResourceLoaderAware;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * Factory for {@link Word2VecSynonymFilter}.
@@ -46,12 +38,17 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
   /** SPI name */
   public static final String NAME = "Word2VecSynonym";
 
+  private enum SupportedModels {
+    DL4J
+  };
+
   public static final int DEFAULT_MAX_RESULT = 10;
   public static final float DEFAULT_ACCURACY = 0.7f;
-  private static final String MODEL_FILE_NAME_PREFIX = "syn0";
+
 
   private final int maxResult;
   private final float accuracy;
+  private final SupportedModels format;
   private final String word2vecModel;
 
   private SynonymProvider synonymProvider = null;
@@ -60,6 +57,7 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
     super(args);
     this.maxResult = getInt(args, "maxResult", DEFAULT_MAX_RESULT);
     this.accuracy = getFloat(args, "accuracy", DEFAULT_ACCURACY);
+    this.format = SupportedModels.valueOf(get(args, "format", "dl4j").toUpperCase());
     this.word2vecModel = require(args, "model");
 
     if (!args.isEmpty()) {
@@ -86,50 +84,21 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
   public void inform(ResourceLoader loader) throws IOException {
     try(InputStream stream = loader.openResource(word2vecModel)) {
       printJVMMemory("before reading file");
-      List<Word2VecSynonymTerm> terms = loadWordVectors(stream);
+      Word2VecModelReader reader = getModelReader();
+      List<Word2VecSynonymTerm> terms = reader.parse(stream);
       printJVMMemory("before creating graph");
       synonymProvider = new Word2VecSynonymProvider(terms, maxResult, accuracy);
       printJVMMemory("everything initialized");
     }
   }
 
-  List<Word2VecSynonymTerm> loadWordVectors(InputStream stream) throws IOException {
-    long startTime = System.currentTimeMillis();
-    try (ZipInputStream zipfile = new ZipInputStream(new BufferedInputStream(stream))) {
-
-      ZipEntry entry;
-      while ((entry = zipfile.getNextEntry()) != null) {
-        String name = entry.getName();
-        if (name.startsWith(MODEL_FILE_NAME_PREFIX)) {
-          BufferedReader reader = new BufferedReader(new InputStreamReader(zipfile));
-          List<Word2VecSynonymTerm> result = reader.lines()
-                  .skip(1)
-                  .map(line -> {
-                    String[] tokens = line.split(" ");
-                    String term = decode(tokens[0]);
-
-                    float[] vector = new float[tokens.length - 1];
-                    for (int i = 0; i < tokens.length - 1; i++) {
-                      vector[i] = Float.parseFloat(tokens[i + 1]);
-                    }
-                    return new Word2VecSynonymTerm(term, vector);
-                  })
-                  .collect(Collectors.toList());
-          long endTime = System.currentTimeMillis();
-          System.out.println("loadWordVectors - Elapsed time: " + (endTime-startTime) + " ms (" + ((endTime-startTime)/60000) + " min)");
-          return result;
-        }
+  private Word2VecModelReader getModelReader(){
+    switch (format) {
+      case DL4J: {
+        return new Dl4jModelReader(word2vecModel);
       }
-      throw new UnsupportedEncodingException("The ZIP file '" + word2vecModel + "' does not contain any "
-              + MODEL_FILE_NAME_PREFIX + " file");
     }
-  }
-
-  private String decode(String term) {
-    if(term.startsWith("B64:")) {
-      return new String(Base64.getDecoder().decode(term.substring(4).trim()));
-    }
-    return term;
+    return new Dl4jModelReader(word2vecModel);
   }
 
   private void printJVMMemory(String prefix){
