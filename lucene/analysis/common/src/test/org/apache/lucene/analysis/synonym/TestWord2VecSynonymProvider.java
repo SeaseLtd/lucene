@@ -92,4 +92,18 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
         }
     }
 
+    @Test
+    public void testSimilarityNoSynonymResults() throws Exception {
+        List<Word2VecSynonymTerm> terms = List.of(
+                new Word2VecSynonymTerm("a", new float[]{10, 10}),
+                new Word2VecSynonymTerm("b", new float[]{-10, -8}),
+                new Word2VecSynonymTerm("c", new float[]{-9, -10}),
+                new Word2VecSynonymTerm("d", new float[]{6, -6}));
+
+        SynonymProvider unit = new Word2VecSynonymProvider(terms, MAX_RESULT, ACCURACY);
+
+        List<WeightedSynonym> actual = unit.getSynonyms("a");
+        assertEquals(0, actual.size());
+        }
+
 }

@@ -34,8 +34,17 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
   }
 
   public void testBasicOutput() throws Exception {
+    List<Word2VecSynonymTerm> terms = List.of(
+            new Word2VecSynonymTerm("a", new float[]{10, 10}),
+            new Word2VecSynonymTerm("b", new float[]{10, 8}),
+            new Word2VecSynonymTerm("c", new float[]{9, 10}),
+            new Word2VecSynonymTerm("d", new float[]{1, 1}),
+            new Word2VecSynonymTerm("e", new float[]{99, 101}),
+            new Word2VecSynonymTerm("f", new float[]{1, 10}));
 
-    Analyzer a = getAnalyzer(createSynonymProvider(10, 0.8f));
+    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(terms, 10, 0.8f);
+
+    Analyzer a = getAnalyzer(SynonymProvider);
     assertAnalyzesTo(
             a,
             "pre a post",
@@ -45,6 +54,32 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
             new String[] {"word", "word", "SYNONYM", "SYNONYM", "SYNONYM", "SYNONYM", "word"},
             new int[] {1, 1, 0, 0, 0, 0, 1},
             new int[] {1, 1, 1, 1, 1, 1, 1});
+    a.close();
+  }
+
+  public void testBasicTwoOutput() throws Exception {
+    List<Word2VecSynonymTerm> terms = List.of(
+            new Word2VecSynonymTerm("a", new float[]{10, 10}),
+            new Word2VecSynonymTerm("b", new float[]{10, 8}),
+            new Word2VecSynonymTerm("c", new float[]{9, 10}),
+            new Word2VecSynonymTerm("d", new float[]{1, 1}),
+            new Word2VecSynonymTerm("e", new float[]{99, 101}),
+            new Word2VecSynonymTerm("f", new float[]{1, 10}),
+            new Word2VecSynonymTerm("post", new float[]{-10, -11}),
+            new Word2VecSynonymTerm("after", new float[]{-8, -10}));
+
+    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(terms, 10, 0.8f);
+
+    Analyzer a = getAnalyzer(SynonymProvider);
+    assertAnalyzesTo(
+            a,
+            "pre a post",
+            new String[] {"pre", "a", "d", "e", "c", "b", "post", "after"},
+            new int[] {0, 4, 4, 4, 4, 4, 6, 6},
+            new int[] {3, 5, 5, 5, 5, 5, 10, 10},
+            new String[] {"word", "word", "SYNONYM", "SYNONYM", "SYNONYM", "SYNONYM", "word", "SYNONYM"},
+            new int[] {1, 1, 0, 0, 0, 0, 1, 0},
+            new int[] {1, 1, 1, 1, 1, 1, 1, 1});
     a.close();
   }
 
@@ -59,18 +94,6 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
         return new TokenStreamComponents(tokenizer, synFilter);
       }
     };
-  }
-
-  private SynonymProvider createSynonymProvider(int maxResult, float accuracy) throws IOException {
-    List<Word2VecSynonymTerm> terms = List.of(
-            new Word2VecSynonymTerm("a", new float[]{10, 10}),
-            new Word2VecSynonymTerm("b", new float[]{10, 8}),
-            new Word2VecSynonymTerm("c", new float[]{9, 10}),
-            new Word2VecSynonymTerm("d", new float[]{1, 1}),
-            new Word2VecSynonymTerm("e", new float[]{99, 101}),
-            new Word2VecSynonymTerm("f", new float[]{1, 10}));
-
-    return new Word2VecSynonymProvider(terms, maxResult, accuracy);
   }
 
 }

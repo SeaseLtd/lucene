@@ -51,6 +51,7 @@ public class TestDl4jModelReader extends LuceneTestCase {
       List<Word2VecSynonymTerm> terms = unit.parse(stream);
       assertEquals(235, terms.size());
       assertEquals(100, terms.get(0).getVector().length);
+      assertNotEquals("aXQ=", terms.get(0).getWord());
     }
   }
 }
