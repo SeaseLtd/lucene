@@ -38,8 +38,6 @@ import java.util.List;
  */
 public final class Word2VecSynonymFilter extends TokenFilter {
 
-  public static final String TYPE_SYNONYM = "SYNONYM";
-
   private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
   private final PositionIncrementAttribute posIncrAtt = addAttribute(PositionIncrementAttribute.class);
   private final PositionLengthAttribute posLenAtt = addAttribute(PositionLengthAttribute.class);
@@ -92,7 +90,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
     termAtt.setEmpty();
     termAtt.append(synonym.getTerm());
     boostAtt.setBoost(synonym.getWeight());
-    typeAtt.setType(TYPE_SYNONYM);
+    typeAtt.setType(SynonymGraphFilter.TYPE_SYNONYM);
     posLenAtt.setPositionLength(1);
     posIncrAtt.setPositionIncrement(0);
   }

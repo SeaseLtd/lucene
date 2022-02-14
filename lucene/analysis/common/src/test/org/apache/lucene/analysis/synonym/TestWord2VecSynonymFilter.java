@@ -30,8 +30,6 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
   /** Set as a side effect by {@link #getAnalyzer}. */
   private Word2VecSynonymFilter synFilter;
 
-  public TestWord2VecSynonymFilter() {
-  }
 
   public void testBasicOutput() throws Exception {
     List<Word2VecSynonymTerm> terms = List.of(

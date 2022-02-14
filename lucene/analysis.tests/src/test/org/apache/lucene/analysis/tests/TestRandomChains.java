@@ -420,25 +420,25 @@ public class TestRandomChains extends BaseTokenStreamTestCase {
                   });
               put(
                   SynonymProvider.class,
-                    random -> {
-                        ArrayList<Word2VecSynonymTerm> terms = new ArrayList<>();
-                        final int numEntries = atLeast(10);
-                        final int vectorDimension = random.nextInt(99) + 1;
-                        for (int j = 0; j < numEntries; j++) {
-                            String s = TestUtil.randomSimpleString(random, 10, 20);
-                            float[] vec = new float[vectorDimension];
-                            for (int i = 0; i < vectorDimension; i++){
-                                vec[i] = random.nextFloat();
-                            }
-                            terms.add(new Word2VecSynonymTerm(s, vec));
-                        }
-                        try {
-                            return new Word2VecSynonymProvider(terms, 10, 0.7f);
-                        } catch (IOException e) {
-                            Rethrow.rethrow(e);
-                            return null; // unreachable code
-                        }
-                    });
+                  random -> {
+                    ArrayList<Word2VecSynonymTerm> terms = new ArrayList<>();
+                    final int numEntries = atLeast(10);
+                    final int vectorDimension = random.nextInt(99) + 1;
+                    for (int j = 0; j < numEntries; j++) {
+                      String s = TestUtil.randomSimpleString(random, 10, 20);
+                      float[] vec = new float[vectorDimension];
+                      for (int i = 0; i < vectorDimension; i++) {
+                        vec[i] = random.nextFloat();
+                      }
+                      terms.add(new Word2VecSynonymTerm(s, vec));
+                    }
+                    try {
+                      return new Word2VecSynonymProvider(terms, 10, 0.7f);
+                    } catch (IOException e) {
+                      Rethrow.rethrow(e);
+                      return null; // unreachable code
+                    }
+                  });
               put(
                   DateFormat.class,
                   random -> {
