@@ -31,14 +31,11 @@
  * limitations under the License.
  */
 
-
 package org.apache.lucene.analysis.synonym;
-
-import org.apache.lucene.tests.util.LuceneTestCase;
 
 import java.io.InputStream;
 import java.util.List;
-
+import org.apache.lucene.tests.util.LuceneTestCase;
 
 public class TestDl4jModelReader extends LuceneTestCase {
 

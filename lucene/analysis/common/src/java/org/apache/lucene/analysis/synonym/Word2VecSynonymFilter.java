@@ -17,6 +17,9 @@
 
 package org.apache.lucene.analysis.synonym;
 
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.synonym.SynonymProvider.WeightedSynonym;
@@ -26,11 +29,6 @@ import org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.search.BoostAttribute;
 
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-
-
 /**
  * Applies single-token synonyms from a Word2Vec trained network to an incoming {@link TokenStream}.
  *
@@ -39,7 +37,8 @@ import java.util.List;
 public final class Word2VecSynonymFilter extends TokenFilter {
 
   private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
-  private final PositionIncrementAttribute posIncrAtt = addAttribute(PositionIncrementAttribute.class);
+  private final PositionIncrementAttribute posIncrAtt =
+      addAttribute(PositionIncrementAttribute.class);
   private final PositionLengthAttribute posLenAtt = addAttribute(PositionLengthAttribute.class);
   private final BoostAttribute boostAtt = addAttribute(BoostAttribute.class);
   private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
@@ -68,7 +67,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
       return true;
     }
 
-    if(input.incrementToken()) {
+    if (input.incrementToken()) {
       String term = new String(termAtt.buffer(), 0, termAtt.length());
       List<WeightedSynonym> synonyms = this.synonymProvider.getSynonyms(term);
       if (synonyms.size() > 0) {
@@ -79,7 +78,6 @@ public final class Word2VecSynonymFilter extends TokenFilter {
     }
     return false;
   }
-
 
   private void releaseBufferedToken() {
     assert outputBuffer.size() > 0;
@@ -95,11 +93,9 @@ public final class Word2VecSynonymFilter extends TokenFilter {
     posIncrAtt.setPositionIncrement(0);
   }
 
-
   @Override
   public void reset() throws IOException {
     super.reset();
     outputBuffer.clear();
   }
-
 }

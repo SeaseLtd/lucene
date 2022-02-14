@@ -17,15 +17,15 @@
 
 package org.apache.lucene.analysis.synonym;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import org.apache.lucene.analysis.TokenFilterFactory;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.util.ResourceLoader;
 import org.apache.lucene.util.ResourceLoaderAware;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Factory for {@link Word2VecSynonymFilter}.
@@ -33,7 +33,8 @@ import java.util.Map;
  * @lucene.experimental
  * @lucene.spi {@value #NAME}
  */
-public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements ResourceLoaderAware {
+public class Word2VecSynonymFilterFactory extends TokenFilterFactory
+    implements ResourceLoaderAware {
 
   /** SPI name */
   public static final String NAME = "Word2VecSynonym";
@@ -44,7 +45,6 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
 
   public static final int DEFAULT_MAX_RESULT = 10;
   public static final float DEFAULT_ACCURACY = 0.7f;
-
 
   private final int maxResult;
   private final float accuracy;
@@ -57,7 +57,7 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
     super(args);
     this.maxResult = getInt(args, "maxResult", DEFAULT_MAX_RESULT);
     this.accuracy = getFloat(args, "accuracy", DEFAULT_ACCURACY);
-    this.format = SupportedModels.valueOf(get(args, "format", "dl4j").toUpperCase());
+    this.format = SupportedModels.valueOf(get(args, "format", "dl4j").toUpperCase(Locale.ROOT));
     this.word2vecModel = require(args, "model");
 
     if (!args.isEmpty()) {
@@ -70,40 +70,42 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory implements 
     throw defaultCtorException();
   }
 
-  SynonymProvider getSynonymProvider(){
+  SynonymProvider getSynonymProvider() {
     return this.synonymProvider;
   }
 
   @Override
   public TokenStream create(TokenStream input) {
-    // if the synonymProvider is null, it means there's actually no synonyms... just return the original stream
+    // if the synonymProvider is null, it means there's actually no synonyms... just return the
+    // original stream
     return synonymProvider == null ? input : new Word2VecSynonymFilter(input, synonymProvider);
   }
 
   @Override
   public void inform(ResourceLoader loader) throws IOException {
-    try(InputStream stream = loader.openResource(word2vecModel)) {
-      printJVMMemory("before reading file");
+    try (InputStream stream = loader.openResource(word2vecModel)) {
+      //      printJVMMemory("before reading file");
       Word2VecModelReader reader = getModelReader();
       List<Word2VecSynonymTerm> terms = reader.parse(stream);
-      printJVMMemory("before creating graph");
+      //      printJVMMemory("before creating graph");
       synonymProvider = new Word2VecSynonymProvider(terms, maxResult, accuracy);
-      printJVMMemory("everything initialized");
+      //      printJVMMemory("everything initialized");
     }
   }
 
-  private Word2VecModelReader getModelReader(){
+  private Word2VecModelReader getModelReader() {
     switch (format) {
-      case DL4J: {
-        return new Dl4jModelReader(word2vecModel);
-      }
+      case DL4J:
+        {
+          return new Dl4jModelReader(word2vecModel);
+        }
     }
     return new Dl4jModelReader(word2vecModel);
   }
 
-  private void printJVMMemory(String prefix){
-    long total = Runtime.getRuntime().totalMemory() / 1024 / 1024;
-    System.out.println(prefix + ": total memory = " + total + "Mb");
-  }
+  //  private void printJVMMemory(String prefix){
+  //    long total = Runtime.getRuntime().totalMemory() / 1024 / 1024;
+  //    System.out.println(prefix + ": total memory = " + total + "Mb");
+  //  }
 
 }

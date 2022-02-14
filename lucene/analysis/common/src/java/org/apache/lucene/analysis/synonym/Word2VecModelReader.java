@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-
 /**
  * Generic synonym provider
  *
@@ -29,6 +28,5 @@ import java.util.List;
  */
 public interface Word2VecModelReader {
 
-    List<Word2VecSynonymTerm> parse(InputStream stream) throws IOException;
-
+  List<Word2VecSynonymTerm> parse(InputStream stream) throws IOException;
 }
