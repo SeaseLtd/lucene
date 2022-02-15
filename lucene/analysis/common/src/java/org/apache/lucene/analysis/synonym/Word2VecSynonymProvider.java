@@ -32,6 +32,7 @@ import org.apache.lucene.index.VectorValues;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.hnsw.HnswGraph;
 import org.apache.lucene.util.hnsw.HnswGraphBuilder;
+import org.apache.lucene.util.hnsw.HnswGraphSearcher;
 import org.apache.lucene.util.hnsw.NeighborQueue;
 
 /**
@@ -99,7 +100,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     float[] query = vectors.vectorValue(token);
     if (query != null) {
       NeighborQueue synonyms =
-          HnswGraph.search(query, topK, vectors, similarityFunction, hnswGraph, null);
+          HnswGraphSearcher.search(query, topK, vectors, similarityFunction, hnswGraph, null);
 
       int size = synonyms.size();
       for (int i = 0; i < size; i++) {
