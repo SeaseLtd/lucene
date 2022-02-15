@@ -17,6 +17,9 @@
 
 package org.apache.lucene.analysis.synonym;
 
+import static org.apache.lucene.codecs.lucene91.Lucene91HnswVectorsFormat.DEFAULT_BEAM_WIDTH;
+import static org.apache.lucene.codecs.lucene91.Lucene91HnswVectorsFormat.DEFAULT_MAX_CONN;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -27,6 +30,9 @@ import org.apache.lucene.index.RandomAccessVectorValuesProducer;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.index.VectorValues;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.hnsw.HnswGraph;
+import org.apache.lucene.util.hnsw.HnswGraphBuilder;
+import org.apache.lucene.util.hnsw.NeighborQueue;
 
 /**
  * Implementation of a {@link SynonymProvider} using vector similarity technique
@@ -37,6 +43,12 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
   public static final VectorSimilarityFunction similarityFunction = VectorSimilarityFunction.COSINE;
   public static final long SEED = System.currentTimeMillis();
+
+  private final int topK;
+  private final float distanceThreshold;
+
+  private final VectorProvider vectors;
+  private final HnswGraph hnswGraph;
 
   /**
    * SynonymProvider constructor
@@ -59,6 +71,17 @@ public class Word2VecSynonymProvider implements SynonymProvider {
       throw new IllegalArgumentException(
           "Accuracy must be in the range (0, 1]. Found: " + accuracy);
     }
+    this.distanceThreshold = accuracy;
+    this.topK = maxResult;
+
+    //        long startTime = System.currentTimeMillis();
+
+    // Create the provider which will feed the vectors for the graph
+    vectors = new VectorProvider(vectorData);
+    HnswGraphBuilder builder =
+        new HnswGraphBuilder(
+            vectors, similarityFunction, DEFAULT_MAX_CONN, DEFAULT_BEAM_WIDTH, SEED);
+    this.hnswGraph = builder.build(vectors);
 
     //        long endTime = System.currentTimeMillis();
     //        System.out.println("HnswGraph Builder - Elapsed time: " + (endTime-startTime) + " ms
@@ -67,10 +90,30 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
   @Override
   public List<WeightedSynonym> getSynonyms(String token) throws IOException {
+    //        long startTime = System.currentTimeMillis();
+
     if (token == null) {
       throw new IllegalArgumentException("Term must not be null");
     }
     LinkedList<WeightedSynonym> result = new LinkedList<>();
+    float[] query = vectors.vectorValue(token);
+    if (query != null) {
+      NeighborQueue synonyms =
+          HnswGraph.search(query, topK, vectors, similarityFunction, hnswGraph, null);
+
+      int size = synonyms.size();
+      for (int i = 0; i < size; i++) {
+        int id = synonyms.pop();
+        Word2VecSynonymTerm term = vectors.getSynonymTerm(id);
+        float similarity = similarityFunction.compare(term.getVector(), query);
+        if (!term.getWord().equals(token) && similarity >= this.distanceThreshold) {
+          result.addFirst(new WeightedSynonym(term.getWord(), similarity));
+        }
+      }
+    }
+    //        long endTime = System.currentTimeMillis();
+    //        System.out.println("getSynonyms - Found " + result.size() + " terms - Elapsed time: "
+    // + (endTime-startTime) + " ms (" + ((endTime-startTime)/60000) + " min)");
     return result;
   }
 
