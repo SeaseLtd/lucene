@@ -18,12 +18,11 @@
 package org.apache.lucene.analysis.synonym;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.lucene.analysis.TokenFilterFactory;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.synonym.Word2VecSynonymProviderFactory.Word2VecSupportedFormats;
 import org.apache.lucene.util.ResourceLoader;
 import org.apache.lucene.util.ResourceLoaderAware;
 
@@ -39,16 +38,12 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
   /** SPI name */
   public static final String NAME = "Word2VecSynonym";
 
-  private enum SupportedModels {
-    DL4J
-  };
-
   public static final int DEFAULT_MAX_RESULT = 10;
   public static final float DEFAULT_ACCURACY = 0.7f;
 
   private final int maxResult;
   private final float accuracy;
-  private final SupportedModels format;
+  private final Word2VecSupportedFormats format;
   private final String word2vecModel;
 
   private SynonymProvider synonymProvider = null;
@@ -57,8 +52,10 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
     super(args);
     this.maxResult = getInt(args, "maxResult", DEFAULT_MAX_RESULT);
     this.accuracy = getFloat(args, "accuracy", DEFAULT_ACCURACY);
-    this.format = SupportedModels.valueOf(get(args, "format", "dl4j").toUpperCase(Locale.ROOT));
     this.word2vecModel = require(args, "model");
+
+    String modelFormat = get(args, "format", "dl4j").toUpperCase(Locale.ROOT);
+    this.format = Word2VecSupportedFormats.valueOf(modelFormat);
 
     if (!args.isEmpty()) {
       throw new IllegalArgumentException("Unknown parameters: " + args);
@@ -83,20 +80,8 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
 
   @Override
   public void inform(ResourceLoader loader) throws IOException {
-    try (InputStream stream = loader.openResource(word2vecModel)) {
-      Word2VecModelReader reader = getModelReader();
-      List<Word2VecSynonymTerm> terms = reader.parse(stream);
-      synonymProvider = new Word2VecSynonymProvider(terms, maxResult, accuracy);
-    }
-  }
-
-  private Word2VecModelReader getModelReader() {
-    switch (format) {
-      case DL4J:
-        {
-          return new Dl4jModelReader(word2vecModel);
-        }
-    }
-    return new Dl4jModelReader(word2vecModel);
+    this.synonymProvider =
+        Word2VecSynonymProviderFactory.getSynonymProvider(
+            loader, word2vecModel, format, maxResult, accuracy);
   }
 }
