@@ -16,9 +16,11 @@
  */
 
 /** Lucene Analysis Common. */
+@SuppressWarnings({"requires-automatic"})
 module org.apache.lucene.analysis.common {
   requires java.xml;
   requires org.apache.lucene.core;
+  requires deeplearning4j.nlp;
 
   exports org.apache.lucene.analysis.ar;
   exports org.apache.lucene.analysis.bg;

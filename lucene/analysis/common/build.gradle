@@ -22,6 +22,15 @@ description = 'Analyzers for indexing content in different languages and domains
 dependencies {
   moduleApi project(':lucene:core')
   moduleTestImplementation project(':lucene:test-framework')
+
+  moduleImplementation ("org.deeplearning4j:deeplearning4j-nlp", {
+    exclude group: "org.nd4j", module: "nd4j-native-api"
+    exclude module: "deeplearning4j-datasets"
+    exclude module: "deeplearning4j-datavec-iterators"
+    exclude module: "deeplearning4j-modelimport"
+    exclude module: "deeplearning4j-ui-components"
+  })
+
 }
 
 // Fetch the data and enable regression tests against woorm/ libreoffice dictionaries.

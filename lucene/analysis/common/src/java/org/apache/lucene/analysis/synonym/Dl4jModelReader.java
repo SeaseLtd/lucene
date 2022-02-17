@@ -20,6 +20,11 @@ package org.apache.lucene.analysis.synonym;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import org.deeplearning4j.models.embeddings.WeightLookupTable;
+import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
+import org.deeplearning4j.models.sequencevectors.SequenceVectors;
+import org.deeplearning4j.models.word2vec.VocabWord;
+import org.deeplearning4j.models.word2vec.wordstore.VocabCache;
 
 /**
  * Word2VecModelReader that wraps the Deeplearning4j library
@@ -32,6 +37,12 @@ public class Dl4jModelReader implements Word2VecModelReader {
 
   @Override
   public List<Word2VecSynonymTerm> parse(InputStream stream) throws IOException {
+
+    SequenceVectors<VocabWord> vectors = WordVectorSerializer.readSequenceVectors(stream, true);
+
+    WeightLookupTable<VocabWord> lookupTable = vectors.getLookupTable();
+    VocabCache<VocabWord> vocab = vectors.getVocab();
+
     return List.of();
   }
 }
