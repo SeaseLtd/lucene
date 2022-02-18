@@ -24,11 +24,31 @@ dependencies {
   moduleTestImplementation project(':lucene:test-framework')
 
   moduleImplementation ("org.deeplearning4j:deeplearning4j-nlp", {
+    exclude group: "org.slf4j"
+    exclude group: "com.github.oshi"
+    exclude group: "it.unimi.dsi"
+    exclude group: "org.apache.commons"
+    exclude group: "commons-io"
+    exclude group: "org.datavec"
+    exclude group: "com.github.oshi"
+    exclude group: "org.threadly"
+    exclude group: "com.github.vinhkhuc"
+    exclude group: "commons-lang"
+    exclude group: "org.lucee"
+    exclude group: "com.google.flatbuffers"
+    exclude group: "commons-net"
+    exclude group: "org.bytedeco"
+    exclude group: "com.jakewharton.byteunits"
+    exclude group: "net.ericaro"
+    exclude group: "com.google.code.gson"
     exclude group: "org.nd4j", module: "nd4j-native-api"
-    exclude module: "deeplearning4j-datasets"
-    exclude module: "deeplearning4j-datavec-iterators"
-    exclude module: "deeplearning4j-modelimport"
-    exclude module: "deeplearning4j-ui-components"
+    exclude group: "org.nd4j", module: "protobuf"
+    exclude group: "org.nd4j", module: "nd4j-common"
+    exclude group: "org.deeplearning4j", module: "deeplearning4j-datasets"
+    exclude group: "org.deeplearning4j", module: "deeplearning4j-datavec-iterators"
+    exclude group: "org.deeplearning4j", module: "deeplearning4j-modelimport"
+    exclude group: "org.deeplearning4j", module: "deeplearning4j-ui-components"
+    exclude group: "org.deeplearning4j", module: "deeplearning4j-utility-iterators"
   })
 
 }

@@ -19,6 +19,7 @@ package org.apache.lucene.analysis.synonym;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import org.deeplearning4j.models.embeddings.WeightLookupTable;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
@@ -43,6 +44,15 @@ public class Dl4jModelReader implements Word2VecModelReader {
     WeightLookupTable<VocabWord> lookupTable = vectors.getLookupTable();
     VocabCache<VocabWord> vocab = vectors.getVocab();
 
-    return List.of();
+    List<Word2VecSynonymTerm> result = new ArrayList<>();
+
+    int size = vocab.words().size();
+    for (int i = 0; i < size; i++) {
+      String word = vocab.wordAtIndex(i);
+      float[] vector = lookupTable.getWeights().getRow(i).toFloatVector();
+      result.add(new Word2VecSynonymTerm(word, vector));
+    }
+
+    return result;
   }
 }
