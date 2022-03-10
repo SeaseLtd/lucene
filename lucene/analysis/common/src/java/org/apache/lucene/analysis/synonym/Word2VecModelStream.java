@@ -17,15 +17,35 @@
 
 package org.apache.lucene.analysis.synonym;
 
-import java.io.Closeable;
-import java.io.IOException;
+import java.util.stream.Stream;
 
 /**
- * Generic synonym provider
+ * Word2VecModelStream is a class that embeds the Word2VecSynonymTerm stream and some properties
+ * like size and vector dimensions
  *
  * @lucene.experimental
  */
-public interface Word2VecModelReader extends Closeable {
+public class Word2VecModelStream {
 
-  Word2VecModelStream parse() throws IOException;
+  private final int size;
+  private final int dimension;
+  private final Stream<Word2VecSynonymTerm> modelStream;
+
+  public Word2VecModelStream(int size, int dimension, Stream<Word2VecSynonymTerm> modelStream) {
+    this.size = size;
+    this.dimension = dimension;
+    this.modelStream = modelStream;
+  }
+
+  public int getSize() {
+    return size;
+  }
+
+  public int getDimension() {
+    return dimension;
+  }
+
+  public Stream<Word2VecSynonymTerm> getModelStream() {
+    return modelStream;
+  }
 }
