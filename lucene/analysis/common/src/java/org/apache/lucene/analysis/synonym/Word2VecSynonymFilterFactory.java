@@ -60,6 +60,14 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
     if (!args.isEmpty()) {
       throw new IllegalArgumentException("Unknown parameters: " + args);
     }
+    if (accuracy <= 0 || accuracy > 1) {
+      throw new IllegalArgumentException(
+          "Accuracy must be in the range (0, 1]. Found: " + accuracy);
+    }
+    if (maxResult < 0) {
+      throw new IllegalArgumentException(
+          "maxResult must be a positive integer. Found: " + maxResult);
+    }
   }
 
   /** Default ctor for compatibility with SPI */
@@ -75,13 +83,14 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
   public TokenStream create(TokenStream input) {
     // if the synonymProvider is null, it means there's actually no synonyms... just return the
     // original stream
-    return synonymProvider == null ? input : new Word2VecSynonymFilter(input, synonymProvider);
+    return synonymProvider == null
+        ? input
+        : new Word2VecSynonymFilter(input, synonymProvider, maxResult, accuracy);
   }
 
   @Override
   public void inform(ResourceLoader loader) throws IOException {
     this.synonymProvider =
-        Word2VecSynonymProviderFactory.getSynonymProvider(
-            loader, word2vecModel, format, maxResult, accuracy);
+        Word2VecSynonymProviderFactory.getSynonymProvider(loader, word2vecModel, format);
   }
 }
