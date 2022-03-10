@@ -45,9 +45,6 @@ public class Word2VecSynonymProvider implements SynonymProvider {
   public static final VectorSimilarityFunction similarityFunction = VectorSimilarityFunction.COSINE;
   public static final long SEED = System.currentTimeMillis();
 
-  private final int topK;
-  private final float distanceThreshold;
-
   private final VectorProvider vectors;
   private final HnswGraph hnswGraph;
 
@@ -55,12 +52,8 @@ public class Word2VecSynonymProvider implements SynonymProvider {
    * SynonymProvider constructor
    *
    * @param vectorData list of SynonymTerms
-   * @param maxResult maximum number of result returned by the synonym search
-   * @param accuracy minimal value of cosign similarity between the searched vector and the
-   *     retrieved ones
    */
-  public Word2VecSynonymProvider(
-      List<Word2VecSynonymTerm> vectorData, int maxResult, float accuracy) throws IOException {
+  public Word2VecSynonymProvider(List<Word2VecSynonymTerm> vectorData) throws IOException {
 
     if (vectorData == null) {
       throw new IllegalArgumentException("VectorData must be set");
@@ -68,14 +61,6 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     if (vectorData.size() <= 0) {
       throw new IllegalArgumentException("VectorData must not be empty");
     }
-    if (accuracy <= 0 || accuracy > 1) {
-      throw new IllegalArgumentException(
-          "Accuracy must be in the range (0, 1]. Found: " + accuracy);
-    }
-    this.distanceThreshold = accuracy;
-    this.topK = maxResult;
-
-    //        long startTime = System.currentTimeMillis();
 
     // Create the provider which will feed the vectors for the graph
     vectors = new VectorProvider(vectorData);
@@ -83,31 +68,28 @@ public class Word2VecSynonymProvider implements SynonymProvider {
         new HnswGraphBuilder(
             vectors, similarityFunction, DEFAULT_MAX_CONN, DEFAULT_BEAM_WIDTH, SEED);
     this.hnswGraph = builder.build(vectors);
-
-    //        long endTime = System.currentTimeMillis();
-    //        System.out.println("HnswGraph Builder - Elapsed time: " + (endTime-startTime) + " ms
-    // (" + ((endTime-startTime)/60000) + " min)");
   }
 
   @Override
-  public List<WeightedSynonym> getSynonyms(String token) throws IOException {
+  public List<WeightedSynonym> getSynonyms(String token, int maxResult, float accuracy)
+      throws IOException {
     //        long startTime = System.currentTimeMillis();
-
     if (token == null) {
       throw new IllegalArgumentException("Term must not be null");
     }
+
     LinkedList<WeightedSynonym> result = new LinkedList<>();
     float[] query = vectors.vectorValue(token);
     if (query != null) {
       NeighborQueue synonyms =
-          HnswGraphSearcher.search(query, topK, vectors, similarityFunction, hnswGraph, null);
+          HnswGraphSearcher.search(query, maxResult, vectors, similarityFunction, hnswGraph, null);
 
       int size = synonyms.size();
       for (int i = 0; i < size; i++) {
         int id = synonyms.pop();
         Word2VecSynonymTerm term = vectors.getSynonymTerm(id);
         float similarity = similarityFunction.compare(term.getVector(), query);
-        if (!term.getWord().equals(token) && similarity >= this.distanceThreshold) {
+        if (!term.getWord().equals(token) && similarity >= accuracy) {
           result.addFirst(new WeightedSynonym(term.getWord(), similarity));
         }
       }
