@@ -33,6 +33,22 @@
 
 package org.apache.lucene.analysis.synonym;
 
+import java.io.InputStream;
+import java.util.List;
 import org.apache.lucene.tests.util.LuceneTestCase;
 
-public class TestDl4jModelReader extends LuceneTestCase {}
+public class TestDl4jModelReader extends LuceneTestCase {
+
+  private static final String WORD2VEC_MODEL_FILE = "word2vec-model.txt";
+
+  Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE);
+
+  public void testDl4jModelParser() throws Exception {
+    try (InputStream stream = TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE)) {
+      List<Word2VecSynonymTerm> terms = unit.parse(stream);
+      assertEquals(235, terms.size());
+      assertEquals(100, terms.get(0).getVector().length);
+      assertNotEquals("aXQ=", terms.get(0).getWord());
+    }
+  }
+}

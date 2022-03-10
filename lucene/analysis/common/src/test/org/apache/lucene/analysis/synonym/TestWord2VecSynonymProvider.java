@@ -35,42 +35,23 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
         List.of(
             new Word2VecSynonymTerm("a", new float[] {0.24f, 0.78f, 0.28f}),
             new Word2VecSynonymTerm("b", new float[] {0.44f, 0.01f, 0.81f}));
-    unit = new Word2VecSynonymProvider(terms, MAX_RESULT, ACCURACY);
+    unit = new Word2VecSynonymProvider(terms);
   }
 
   @Test
   public void testConstructorNullVector() {
-    expectThrows(
-        IllegalArgumentException.class,
-        () -> new Word2VecSynonymProvider(null, MAX_RESULT, ACCURACY));
+    expectThrows(IllegalArgumentException.class, () -> new Word2VecSynonymProvider(null));
   }
 
   @Test
   public void testConstructorEmptyVector() {
-    expectThrows(
-        IllegalArgumentException.class,
-        () -> new Word2VecSynonymProvider(List.of(), MAX_RESULT, ACCURACY));
-  }
-
-  @Test
-  public void testConstructorWrongAccuracy() {
-    List<Word2VecSynonymTerm> terms =
-        List.of(
-            new Word2VecSynonymTerm("a", new float[] {0.24f, 0.78f, 0.28f}),
-            new Word2VecSynonymTerm("b", new float[] {0.44f, 0.01f, 0.81f}));
-    expectThrows(
-        IllegalArgumentException.class, () -> new Word2VecSynonymProvider(terms, MAX_RESULT, 0));
-    expectThrows(
-        IllegalArgumentException.class,
-        () -> new Word2VecSynonymProvider(terms, MAX_RESULT, -0.4f));
-    expectThrows(
-        IllegalArgumentException.class,
-        () -> new Word2VecSynonymProvider(terms, MAX_RESULT, 1.01f));
+    expectThrows(IllegalArgumentException.class, () -> new Word2VecSynonymProvider(List.of()));
   }
 
   @Test
   public void testSimilarityNullTerm() {
-    expectThrows(IllegalArgumentException.class, () -> unit.getSynonyms(null));
+    expectThrows(
+        IllegalArgumentException.class, () -> unit.getSynonyms(null, MAX_RESULT, ACCURACY));
   }
 
   @Test
@@ -85,10 +66,10 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
             new Word2VecSynonymTerm("e", new float[] {99, 101}),
             new Word2VecSynonymTerm("f", new float[] {-1, 10}));
 
-    SynonymProvider unit = new Word2VecSynonymProvider(terms, MAX_RESULT, ACCURACY);
+    SynonymProvider unit = new Word2VecSynonymProvider(terms);
 
     String[] expected = {"d", "e", "c", "b"};
-    List<WeightedSynonym> actual = unit.getSynonyms("a");
+    List<WeightedSynonym> actual = unit.getSynonyms("a", MAX_RESULT, ACCURACY);
 
     assertEquals(4, actual.size());
     for (int i = 0; i < expected.length; i++) {
@@ -105,9 +86,9 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
             new Word2VecSynonymTerm("c", new float[] {-9, -10}),
             new Word2VecSynonymTerm("d", new float[] {6, -6}));
 
-    SynonymProvider unit = new Word2VecSynonymProvider(terms, MAX_RESULT, ACCURACY);
+    SynonymProvider unit = new Word2VecSynonymProvider(terms);
 
-    List<WeightedSynonym> actual = unit.getSynonyms("a");
+    List<WeightedSynonym> actual = unit.getSynonyms("a", MAX_RESULT, ACCURACY);
     assertEquals(0, actual.size());
   }
 }

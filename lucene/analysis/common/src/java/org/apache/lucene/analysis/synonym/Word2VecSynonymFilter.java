@@ -44,6 +44,8 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
 
   private final SynonymProvider synonymProvider;
+  private final int maxResult;
+  private final float accuracy;
   private final LinkedList<WeightedSynonym> outputBuffer = new LinkedList<>();
   private State lastState = null;
 
@@ -52,10 +54,16 @@ public final class Word2VecSynonymFilter extends TokenFilter {
    *
    * @param input input tokenstream
    * @param synonymProvider synonym provider
+   * @param maxResult maximum number of result returned by the synonym search
+   * @param accuracy minimal value of cosign similarity between the searched vector and the
+   *     retrieved ones
    */
-  public Word2VecSynonymFilter(TokenStream input, SynonymProvider synonymProvider) {
+  public Word2VecSynonymFilter(
+      TokenStream input, SynonymProvider synonymProvider, int maxResult, float accuracy) {
     super(input);
     this.synonymProvider = synonymProvider;
+    this.maxResult = maxResult;
+    this.accuracy = accuracy;
   }
 
   @Override
@@ -69,7 +77,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
 
     if (input.incrementToken()) {
       String term = new String(termAtt.buffer(), 0, termAtt.length());
-      List<WeightedSynonym> synonyms = this.synonymProvider.getSynonyms(term);
+      List<WeightedSynonym> synonyms = this.synonymProvider.getSynonyms(term, maxResult, accuracy);
       if (synonyms.size() > 0) {
         this.lastState = captureState();
         this.outputBuffer.addAll(synonyms);

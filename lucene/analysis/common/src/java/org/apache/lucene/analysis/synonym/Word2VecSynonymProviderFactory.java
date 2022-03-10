@@ -38,18 +38,13 @@ public class Word2VecSynonymProviderFactory {
   private static Map<String, SynonymProvider> sentenceModels = new ConcurrentHashMap<>();
 
   public static SynonymProvider getSynonymProvider(
-      ResourceLoader loader,
-      String model,
-      Word2VecSupportedFormats format,
-      int maxResult,
-      float accuracy)
-      throws IOException {
+      ResourceLoader loader, String model, Word2VecSupportedFormats format) throws IOException {
     SynonymProvider synonymProvider = sentenceModels.get(model);
     if (synonymProvider == null) {
       try (InputStream stream = loader.openResource(model)) {
         Word2VecModelReader reader = getModelReader(model, format);
         List<Word2VecSynonymTerm> terms = reader.parse(stream);
-        synonymProvider = new Word2VecSynonymProvider(terms, maxResult, accuracy);
+        synonymProvider = new Word2VecSynonymProvider(terms);
       }
       sentenceModels.put(model, synonymProvider);
     }

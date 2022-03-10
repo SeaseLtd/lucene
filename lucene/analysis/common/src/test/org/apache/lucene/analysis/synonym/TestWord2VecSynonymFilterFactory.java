@@ -18,5 +18,22 @@
 package org.apache.lucene.analysis.synonym;
 
 import org.apache.lucene.tests.analysis.BaseTokenStreamFactoryTestCase;
+import org.apache.lucene.util.ClasspathResourceLoader;
+import org.apache.lucene.util.ResourceLoader;
 
-public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTestCase {}
+public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTestCase {
+
+  public static final String FACTORY_NAME = "Word2VecSynonym";
+  private static final String WORD2VEC_MODEL_FILE = "word2vec-model.txt";
+
+  public void testInform() throws Exception {
+    ResourceLoader loader = new ClasspathResourceLoader(getClass());
+    assertTrue("loader is null and it shouldn't be", loader != null);
+    Word2VecSynonymFilterFactory factory =
+        (Word2VecSynonymFilterFactory)
+            tokenFilterFactory(FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "0.7");
+
+    SynonymProvider synonymProvider = factory.getSynonymProvider();
+    assertNotEquals(null, synonymProvider);
+  }
+}

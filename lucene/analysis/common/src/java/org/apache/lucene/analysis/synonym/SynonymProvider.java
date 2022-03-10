@@ -27,7 +27,15 @@ import java.util.List;
  */
 public interface SynonymProvider {
 
-  List<WeightedSynonym> getSynonyms(String term) throws IOException;
+  /**
+   * SynonymProvider constructor
+   *
+   * @param term we want to find the synonyms
+   * @param maxResult maximum number of result returned by the synonym search
+   * @param accuracy minimal value of cosign similarity between the searched vector and the
+   *     retrieved ones
+   */
+  List<WeightedSynonym> getSynonyms(String term, int maxResult, float accuracy) throws IOException;
 
   /**
    * Term with the associated weight
