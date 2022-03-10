@@ -18,6 +18,7 @@
 package org.apache.lucene.analysis.synonym;
 
 import java.util.List;
+import java.util.stream.Stream;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.tests.analysis.BaseTokenStreamTestCase;
@@ -35,7 +36,7 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
             new Word2VecSynonymTerm("e", new float[] {99, 101}),
             new Word2VecSynonymTerm("f", new float[] {1, 10}));
 
-    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(terms);
+    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(terms));
 
     Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
     assertAnalyzesTo(
@@ -62,7 +63,7 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
             new Word2VecSynonymTerm("post", new float[] {-10, -11}),
             new Word2VecSynonymTerm("after", new float[] {-8, -10}));
 
-    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(terms);
+    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(terms));
 
     Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
     assertAnalyzesTo(
@@ -91,5 +92,12 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
         return new TokenStreamComponents(tokenizer, synFilter);
       }
     };
+  }
+
+  private Word2VecModelStream toStream(List<Word2VecSynonymTerm> list) {
+    int size = list.size();
+    int dimension = list.get(0).size();
+    Stream<Word2VecSynonymTerm> modelStream = list.stream();
+    return new Word2VecModelStream(size, dimension, modelStream);
   }
 }
