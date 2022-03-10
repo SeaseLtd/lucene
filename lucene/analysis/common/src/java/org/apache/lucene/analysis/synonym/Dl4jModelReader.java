@@ -25,8 +25,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -40,54 +39,64 @@ public class Dl4jModelReader implements Word2VecModelReader {
   private static final String MODEL_FILE_NAME_PREFIX = "syn0";
 
   private final String word2vecModelFile;
+  private final ZipInputStream zipfile;
 
-  public Dl4jModelReader(String word2vecModelFile) {
+  public Dl4jModelReader(String word2vecModelFile, InputStream stream) {
     this.word2vecModelFile = word2vecModelFile;
+    this.zipfile = new ZipInputStream(new BufferedInputStream(stream));
   }
 
   @Override
-  public List<Word2VecSynonymTerm> parse(InputStream stream) throws IOException {
-    try (ZipInputStream zipfile = new ZipInputStream(new BufferedInputStream(stream))) {
+  public Word2VecModelStream parse() throws IOException {
 
-      ZipEntry entry;
-      while ((entry = zipfile.getNextEntry()) != null) {
-        String name = entry.getName();
-        if (name.startsWith(MODEL_FILE_NAME_PREFIX)) {
-          BufferedReader reader =
-              new BufferedReader(new InputStreamReader(zipfile, StandardCharsets.UTF_8));
-          List<Word2VecSynonymTerm> result =
-              reader
-                  .lines()
-                  .skip(1)
-                  .map(
-                      line -> {
-                        String[] tokens = line.split(" ");
-                        String term = decode(tokens[0]);
+    ZipEntry entry;
+    while ((entry = zipfile.getNextEntry()) != null) {
+      String name = entry.getName();
+      if (name.startsWith(MODEL_FILE_NAME_PREFIX)) {
+        BufferedReader reader =
+            new BufferedReader(new InputStreamReader(zipfile, StandardCharsets.UTF_8));
 
-                        float[] vector = new float[tokens.length - 1];
-                        for (int i = 0; i < tokens.length - 1; i++) {
-                          vector[i] = Float.parseFloat(tokens[i + 1]);
-                        }
-                        return new Word2VecSynonymTerm(term, vector);
-                      })
-                  .collect(Collectors.toList());
-          return result;
-        }
+        String header = reader.readLine();
+        String[] headerValues = header.split(" ");
+        int size = Integer.parseInt(headerValues[0]);
+        int dimension = Integer.parseInt(headerValues[1]);
+
+        Stream<Word2VecSynonymTerm> modelStream =
+            reader
+                .lines()
+                .map(
+                    line -> {
+                      String[] tokens = line.split(" ");
+                      String term = decodeTerm(tokens[0]);
+
+                      float[] vector = new float[tokens.length - 1];
+                      for (int i = 0; i < tokens.length - 1; i++) {
+                        vector[i] = Float.parseFloat(tokens[i + 1]);
+                      }
+                      return new Word2VecSynonymTerm(term, vector);
+                    });
+
+        return new Word2VecModelStream(size, dimension, modelStream);
       }
-      throw new UnsupportedEncodingException(
-          "The ZIP file '"
-              + word2vecModelFile
-              + "' does not contain any "
-              + MODEL_FILE_NAME_PREFIX
-              + " file");
     }
+    throw new UnsupportedEncodingException(
+        "The ZIP file '"
+            + word2vecModelFile
+            + "' does not contain any "
+            + MODEL_FILE_NAME_PREFIX
+            + " file");
   }
 
-  private String decode(String term) {
+  private String decodeTerm(String term) {
     if (term.startsWith("B64:")) {
       return new String(
           Base64.getDecoder().decode(term.substring(4).trim()), StandardCharsets.UTF_8);
     }
     return term;
+  }
+
+  @Override
+  public void close() throws IOException {
+    zipfile.close();
   }
 }
