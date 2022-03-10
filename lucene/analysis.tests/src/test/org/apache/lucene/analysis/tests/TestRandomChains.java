@@ -90,6 +90,7 @@ import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.stempel.StempelStemmer;
 import org.apache.lucene.analysis.synonym.SynonymMap;
 import org.apache.lucene.analysis.synonym.SynonymProvider;
+import org.apache.lucene.analysis.synonym.Word2VecModelStream;
 import org.apache.lucene.analysis.synonym.Word2VecSynonymProvider;
 import org.apache.lucene.analysis.synonym.Word2VecSynonymTerm;
 import org.apache.lucene.store.ByteBuffersDirectory;
@@ -433,7 +434,8 @@ public class TestRandomChains extends BaseTokenStreamTestCase {
                       terms.add(new Word2VecSynonymTerm(s, vec));
                     }
                     try {
-                      return new Word2VecSynonymProvider(terms);
+                      return new Word2VecSynonymProvider(
+                          new Word2VecModelStream(numEntries, vectorDimension, terms.stream()));
                     } catch (IOException e) {
                       Rethrow.rethrow(e);
                       return null; // unreachable code

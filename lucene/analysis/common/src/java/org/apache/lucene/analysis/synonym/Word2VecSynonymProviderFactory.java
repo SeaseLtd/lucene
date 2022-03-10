@@ -19,7 +19,6 @@ package org.apache.lucene.analysis.synonym;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.lucene.util.ResourceLoader;
@@ -42,19 +41,20 @@ public class Word2VecSynonymProviderFactory {
     SynonymProvider synonymProvider = sentenceModels.get(model);
     if (synonymProvider == null) {
       try (InputStream stream = loader.openResource(model)) {
-        Word2VecModelReader reader = getModelReader(model, format);
-        List<Word2VecSynonymTerm> terms = reader.parse(stream);
-        synonymProvider = new Word2VecSynonymProvider(terms);
+        try (Word2VecModelReader reader = getModelReader(model, format, stream)) {
+          synonymProvider = new Word2VecSynonymProvider(reader.parse());
+        }
       }
       sentenceModels.put(model, synonymProvider);
     }
     return synonymProvider;
   }
 
-  private static Word2VecModelReader getModelReader(String model, Word2VecSupportedFormats format) {
+  private static Word2VecModelReader getModelReader(
+      String model, Word2VecSupportedFormats format, InputStream stream) {
     switch (format) {
       case DL4J:
-        return new Dl4jModelReader(model);
+        return new Dl4jModelReader(model, stream);
     }
     return null;
   }
