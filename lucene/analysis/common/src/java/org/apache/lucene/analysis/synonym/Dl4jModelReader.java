@@ -47,7 +47,7 @@ public class Dl4jModelReader implements Word2VecModelReader {
   }
 
   @Override
-  public Word2VecModelStream parse() throws IOException {
+  public Word2VecModelStream read() throws IOException {
 
     ZipEntry entry;
     while ((entry = zipfile.getNextEntry()) != null) {
@@ -87,7 +87,7 @@ public class Dl4jModelReader implements Word2VecModelReader {
             + " file");
   }
 
-  private String decodeTerm(String term) {
+  static String decodeTerm(String term) {
     if (term.startsWith("B64:")) {
       return new String(
           Base64.getDecoder().decode(term.substring(4).trim()), StandardCharsets.UTF_8);
