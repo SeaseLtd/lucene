@@ -80,6 +80,29 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
     a.close();
   }
 
+  public void testNoOutput() throws Exception {
+    List<Word2VecSynonymTerm> terms =
+        List.of(
+            new Word2VecSynonymTerm("a", new float[] {10, 10}),
+            new Word2VecSynonymTerm("b", new float[] {-10, -8}),
+            new Word2VecSynonymTerm("c", new float[] {-9, -10}),
+            new Word2VecSynonymTerm("f", new float[] {-1, -10}));
+
+    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(terms));
+
+    Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
+    assertAnalyzesTo(
+        a,
+        "pre a post",
+        new String[] {"pre", "a", "post"},
+        new int[] {0, 4, 6},
+        new int[] {3, 5, 10},
+        new String[] {"word", "word", "word"},
+        new int[] {1, 1, 1},
+        new int[] {1, 1, 1});
+    a.close();
+  }
+
   private Analyzer getAnalyzer(SynonymProvider synonymProvider, int maxResult, float accuracy) {
     return new Analyzer() {
       @Override

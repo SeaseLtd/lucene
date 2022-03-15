@@ -55,7 +55,11 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
     this.word2vecModel = require(args, "model");
 
     String modelFormat = get(args, "format", "dl4j").toUpperCase(Locale.ROOT);
-    this.format = Word2VecSupportedFormats.valueOf(modelFormat);
+    try {
+      this.format = Word2VecSupportedFormats.valueOf(modelFormat);
+    } catch (IllegalArgumentException exc) {
+      throw new IllegalArgumentException("Model format not supported", exc);
+    }
 
     if (!args.isEmpty()) {
       throw new IllegalArgumentException("Unknown parameters: " + args);
@@ -64,9 +68,9 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
       throw new IllegalArgumentException(
           "Accuracy must be in the range (0, 1]. Found: " + accuracy);
     }
-    if (maxResult < 0) {
+    if (maxResult <= 0) {
       throw new IllegalArgumentException(
-          "maxResult must be a positive integer. Found: " + maxResult);
+          "maxResult must be a positive integer greater than 0. Found: " + maxResult);
     }
   }
 
