@@ -36,4 +36,71 @@ public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTest
     SynonymProvider synonymProvider = factory.getSynonymProvider();
     assertNotEquals(null, synonymProvider);
   }
+
+  /** Test that bogus arguments result in exception */
+  public void testBogusArguments() throws Exception {
+    IllegalArgumentException expected =
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tokenFilterFactory(
+                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "bogusArg", "bogusValue");
+            });
+    assertTrue(expected.getMessage().contains("Unknown parameters"));
+  }
+
+  public void testUnsupportedModelFormat() throws Exception {
+    IllegalArgumentException expected =
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tokenFilterFactory(
+                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "format", "bogusValue");
+            });
+    assertTrue(expected.getMessage().contains("Model format not supported"));
+  }
+
+  public void testIllegalArgument() throws Exception {
+    IllegalArgumentException expected =
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tokenFilterFactory(
+                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "2", "maxResult", "10");
+            });
+    assertTrue(expected.getMessage().contains("Accuracy must be in the range (0, 1]. Found: 2"));
+
+    expected =
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tokenFilterFactory(
+                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "0", "maxResult", "10");
+            });
+    assertTrue(expected.getMessage().contains("Accuracy must be in the range (0, 1]. Found: 0"));
+
+    expected =
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tokenFilterFactory(
+                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "0.7", "maxResult", "-1");
+            });
+    assertTrue(
+        expected
+            .getMessage()
+            .contains("maxResult must be a positive integer greater than 0. Found: -1"));
+
+    expected =
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tokenFilterFactory(
+                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "0.7", "maxResult", "0");
+            });
+    assertTrue(
+        expected
+            .getMessage()
+            .contains("maxResult must be a positive integer greater than 0. Found: 0"));
+  }
 }

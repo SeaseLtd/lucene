@@ -34,24 +34,42 @@
 package org.apache.lucene.analysis.synonym;
 
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.junit.Test;
 
 public class TestDl4jModelReader extends LuceneTestCase {
 
   private static final String WORD2VEC_MODEL_FILE = "word2vec-model.txt";
+  private static final String WORD2VEC_MODEL_FILE_EMPTY = "word2vec-model-empty.txt";
 
   @Test
-  public void testDl4jModelParser() throws Exception {
+  public void testDl4jModelReader() throws Exception {
     try (InputStream stream = TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE)) {
       Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE, stream);
 
-      Word2VecModelStream modelStream = unit.parse();
+      Word2VecModelStream modelStream = unit.read();
 
       assertEquals(235, modelStream.getSize());
       assertEquals(100, modelStream.getDimension());
       Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
-      assertNotEquals("aXQ=", firstTerm.getWord());
+      assertNotEquals("B64:aXQ=", firstTerm.getWord());
+      assertEquals("it", firstTerm.getWord());
     }
+  }
+
+  @Test
+  public void testEmptyZipFile() throws Exception {
+    try (InputStream stream =
+        TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE_EMPTY)) {
+      Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE_EMPTY, stream);
+      expectThrows(UnsupportedEncodingException.class, unit::read);
+    }
+  }
+
+  @Test
+  public void testDecodeTerm() throws Exception {
+    String decoded = Dl4jModelReader.decodeTerm("B64:bHVjZW5l");
+    assertEquals("lucene", decoded);
   }
 }
