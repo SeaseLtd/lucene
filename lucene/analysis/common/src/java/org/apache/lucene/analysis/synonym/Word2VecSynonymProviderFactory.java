@@ -42,7 +42,7 @@ public class Word2VecSynonymProviderFactory {
     if (synonymProvider == null) {
       try (InputStream stream = loader.openResource(model)) {
         try (Word2VecModelReader reader = getModelReader(model, format, stream)) {
-          synonymProvider = new Word2VecSynonymProvider(reader.parse());
+          synonymProvider = new Word2VecSynonymProvider(reader.read());
         }
       }
       sentenceModels.put(model, synonymProvider);

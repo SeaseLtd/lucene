@@ -27,5 +27,5 @@ import java.io.IOException;
  */
 public interface Word2VecModelReader extends Closeable {
 
-  Word2VecModelStream parse() throws IOException;
+  Word2VecModelStream read() throws IOException;
 }
