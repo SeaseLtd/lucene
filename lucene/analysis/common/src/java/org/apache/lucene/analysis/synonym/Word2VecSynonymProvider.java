@@ -104,7 +104,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     return result;
   }
 
-  class VectorProducer implements RandomAccessVectorValuesProducer {
+  static class VectorProducer implements RandomAccessVectorValuesProducer {
 
     private final int size;
     private final int dimension;
@@ -151,7 +151,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     }
   }
 
-  class SynonymVector extends VectorValues implements RandomAccessVectorValues {
+  static class SynonymVector extends VectorValues implements RandomAccessVectorValues {
 
     private final int size;
     private final int dimension;
