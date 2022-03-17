@@ -95,6 +95,37 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
     assertEquals(0, actual.size());
   }
 
+  @Test
+  public void testVectorProducer() throws Exception {
+    List<Word2VecSynonymTerm> terms =
+        List.of(
+            new Word2VecSynonymTerm("a", new float[] {10, 10}),
+            new Word2VecSynonymTerm("b", new float[] {10, 8}),
+            new Word2VecSynonymTerm("c", new float[] {9, 10}),
+            new Word2VecSynonymTerm("f", new float[] {-1, 10}));
+
+    Word2VecSynonymProvider.VectorProducer unit =
+        new Word2VecSynonymProvider.VectorProducer(toStream(terms));
+    Word2VecSynonymProvider.SynonymVector vector =
+        (Word2VecSynonymProvider.SynonymVector) unit.randomAccess();
+    assertArrayEquals(new float[] {10, 10}, vector.vectorValue(0), 0.001f);
+    assertArrayEquals(new float[] {-1, 10}, vector.vectorValue(3), 0.001f);
+  }
+
+  @Test
+  public void testVectorProducerModelFileCorrupted() throws Exception {
+    List<Word2VecSynonymTerm> terms =
+        List.of(
+            new Word2VecSynonymTerm("a", new float[] {10, 10}),
+            new Word2VecSynonymTerm("b", new float[] {10, 8}),
+            new Word2VecSynonymTerm("c", new float[] {9}),
+            new Word2VecSynonymTerm("f", new float[] {-1, 10}));
+
+    expectThrows(
+        IllegalArgumentException.class,
+        () -> new Word2VecSynonymProvider.VectorProducer(toStream(terms)));
+  }
+
   private Word2VecModelStream toStream(List<Word2VecSynonymTerm> list) {
     int size = list.size();
     int dimension = list.get(0).size();

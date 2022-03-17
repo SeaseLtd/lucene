@@ -53,6 +53,7 @@ public class TestDl4jModelReader extends LuceneTestCase {
       assertEquals(235, modelStream.getSize());
       assertEquals(100, modelStream.getDimension());
       Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
+      // check the decoder part
       assertNotEquals("B64:aXQ=", firstTerm.getWord());
       assertEquals("it", firstTerm.getWord());
     }
