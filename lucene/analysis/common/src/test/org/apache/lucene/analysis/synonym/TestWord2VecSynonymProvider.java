@@ -81,6 +81,22 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
   }
 
   @Test
+  public void testSimilaritySearchWeightedSynonym() throws Exception {
+    List<Word2VecSynonymTerm> terms =
+        List.of(
+            new Word2VecSynonymTerm("a", new float[] {10, 10}),
+            new Word2VecSynonymTerm("b", new float[] {1, 1}),
+            new Word2VecSynonymTerm("c", new float[] {99, 101}));
+
+    SynonymProvider unit = new Word2VecSynonymProvider(toStream(terms));
+
+    List<WeightedSynonym> actual = unit.getSynonyms("a", MAX_RESULT, ACCURACY);
+    assertEquals("b", actual.get(0).getTerm());
+    assertEquals(1.0, actual.get(0).getWeight(), 0.001f);
+    assertEquals("WeightedSynonym{term='b', weight=1.0}", actual.get(0).toString());
+  }
+
+  @Test
   public void testSimilarityNoSynonymResults() throws Exception {
     List<Word2VecSynonymTerm> terms =
         List.of(

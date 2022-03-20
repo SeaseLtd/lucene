@@ -43,20 +43,39 @@ public class TestDl4jModelReader extends LuceneTestCase {
   private static final String WORD2VEC_MODEL_FILE = "word2vec-model.txt";
   private static final String WORD2VEC_MODEL_FILE_EMPTY = "word2vec-model-empty.txt";
 
+  InputStream stream = TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE);
+  Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE, stream);
+
   @Test
   public void testDl4jModelReader() throws Exception {
-    try (InputStream stream = TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE)) {
-      Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE, stream);
+    Word2VecModelStream modelStream = unit.read();
+    assertEquals(235, modelStream.getSize());
+    assertEquals(100, modelStream.getDimension());
+  }
 
-      Word2VecModelStream modelStream = unit.read();
+  @Test
+  public void testModelFileNotCorruptedSize() throws Exception {
+    Word2VecModelStream modelStream = unit.read();
+    long modelStreamSize = modelStream.getModelStream().count();
+    assertEquals(235, modelStreamSize);
+  }
 
-      assertEquals(235, modelStream.getSize());
-      assertEquals(100, modelStream.getDimension());
-      Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
-      // check the decoder part
-      assertNotEquals("B64:aXQ=", firstTerm.getWord());
-      assertEquals("it", firstTerm.getWord());
-    }
+  @Test
+  public void testModelFileNotCorruptedVectorLength() throws Exception {
+    Word2VecModelStream modelStream = unit.read();
+    Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
+    assertEquals(100, firstTerm.getVector().length);
+  }
+
+  @Test
+  public void testDecodeTerm() throws Exception {
+    Word2VecModelStream modelStream = unit.read();
+    Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
+    assertNotEquals("B64:aXQ=", firstTerm.getWord());
+    assertEquals("it", firstTerm.getWord());
+
+    String decoded = unit.decodeTerm("B64:bHVjZW5l");
+    assertEquals("lucene", decoded);
   }
 
   @Test
@@ -66,11 +85,5 @@ public class TestDl4jModelReader extends LuceneTestCase {
       Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE_EMPTY, stream);
       expectThrows(UnsupportedEncodingException.class, unit::read);
     }
-  }
-
-  @Test
-  public void testDecodeTerm() throws Exception {
-    String decoded = Dl4jModelReader.decodeTerm("B64:bHVjZW5l");
-    assertEquals("lucene", decoded);
   }
 }
