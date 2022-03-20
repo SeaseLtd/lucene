@@ -87,7 +87,7 @@ public class Dl4jModelReader implements Word2VecModelReader {
             + " file");
   }
 
-  static String decodeTerm(String term) {
+  public String decodeTerm(String term) {
     if (term.startsWith("B64:")) {
       return new String(
           Base64.getDecoder().decode(term.substring(4).trim()), StandardCharsets.UTF_8);
