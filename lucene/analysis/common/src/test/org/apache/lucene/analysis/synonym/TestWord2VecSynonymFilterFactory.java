@@ -37,16 +37,15 @@ public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTest
     assertNotEquals(null, synonymProvider);
   }
 
-  /** Test that bogus arguments result in exception */
-  public void testBogusArguments() throws Exception {
+  public void testNoModelParam() throws Exception {
     IllegalArgumentException expected =
         expectThrows(
             IllegalArgumentException.class,
             () -> {
               tokenFilterFactory(
-                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "bogusArg", "bogusValue");
+                  FACTORY_NAME, "format", "dl4j", "accuracy", "0.7", "maxResult", "10");
             });
-    assertTrue(expected.getMessage().contains("Unknown parameters"));
+    assertTrue(expected.getMessage().contains("Configuration Error: missing parameter 'model'"));
   }
 
   public void testUnsupportedModelFormat() throws Exception {
@@ -58,6 +57,17 @@ public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTest
                   FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "format", "bogusValue");
             });
     assertTrue(expected.getMessage().contains("Model format not supported"));
+  }
+
+  public void testBogusArguments() throws Exception {
+    IllegalArgumentException expected =
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tokenFilterFactory(
+                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "bogusArg", "bogusValue");
+            });
+    assertTrue(expected.getMessage().contains("Unknown parameters"));
   }
 
   public void testIllegalArgument() throws Exception {
