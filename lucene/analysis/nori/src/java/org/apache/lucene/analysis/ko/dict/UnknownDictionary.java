@@ -18,13 +18,17 @@ package org.apache.lucene.analysis.ko.dict;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.lucene.analysis.morph.BinaryDictionary;
+import org.apache.lucene.util.IOSupplier;
 import org.apache.lucene.util.IOUtils;
 
 /** Dictionary for unknown-word handling. */
-public final class UnknownDictionary extends BinaryDictionary {
+public final class UnknownDictionary extends BinaryDictionary<UnknownMorphData> {
   private final CharacterDefinition characterDefinition = CharacterDefinition.getInstance();
+  private final UnknownMorphData morphAtts;
 
   /**
    * Create a {@link UnknownDictionary} from an external resource path.
@@ -35,17 +39,45 @@ public final class UnknownDictionary extends BinaryDictionary {
    * @throws IOException if resource was not found or broken
    */
   public UnknownDictionary(Path targetMapFile, Path posDictFile, Path dictFile) throws IOException {
-    super(
+    this(
         () -> Files.newInputStream(targetMapFile),
         () -> Files.newInputStream(posDictFile),
         () -> Files.newInputStream(dictFile));
   }
 
+  /**
+   * Create a {@link UnknownDictionary} from an external resource URL (e.g. from Classpath with
+   * {@link ClassLoader#getResource(String)}).
+   *
+   * @param targetMapUrl where to load target map resource
+   * @param posDictUrl where to load POS dictionary resource
+   * @param dictUrl where to load dictionary entries resource
+   * @throws IOException if resource was not found or broken
+   */
+  public UnknownDictionary(URL targetMapUrl, URL posDictUrl, URL dictUrl) throws IOException {
+    this(
+        () -> targetMapUrl.openStream(), () -> posDictUrl.openStream(), () -> dictUrl.openStream());
+  }
+
   private UnknownDictionary() throws IOException {
-    super(
+    this(
         () -> getClassResource(TARGETMAP_FILENAME_SUFFIX),
         () -> getClassResource(POSDICT_FILENAME_SUFFIX),
         () -> getClassResource(DICT_FILENAME_SUFFIX));
+  }
+
+  private UnknownDictionary(
+      IOSupplier<InputStream> targetMapResource,
+      IOSupplier<InputStream> posResource,
+      IOSupplier<InputStream> dictResource)
+      throws IOException {
+    super(
+        targetMapResource,
+        dictResource,
+        DictionaryConstants.TARGETMAP_HEADER,
+        DictionaryConstants.DICT_HEADER,
+        DictionaryConstants.VERSION);
+    this.morphAtts = new UnknownMorphData(buffer, posResource);
   }
 
   private static InputStream getClassResource(String suffix) throws IOException {
@@ -63,13 +95,8 @@ public final class UnknownDictionary extends BinaryDictionary {
   }
 
   @Override
-  public String getReading(int wordId) {
-    return null;
-  }
-
-  @Override
-  public Morpheme[] getMorphemes(int wordId, char[] surfaceForm, int off, int len) {
-    return null;
+  public UnknownMorphData getMorphAttributes() {
+    return morphAtts;
   }
 
   private static class SingletonHolder {

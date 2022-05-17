@@ -16,22 +16,22 @@
  */
 package org.apache.lucene.analysis.ko.dict;
 
-import static org.apache.lucene.analysis.ko.dict.BinaryDictionary.DICT_FILENAME_SUFFIX;
-import static org.apache.lucene.analysis.ko.dict.BinaryDictionary.POSDICT_FILENAME_SUFFIX;
-import static org.apache.lucene.analysis.ko.dict.BinaryDictionary.TARGETMAP_FILENAME_SUFFIX;
 import static org.apache.lucene.analysis.ko.dict.TokenInfoDictionary.FST_FILENAME_SUFFIX;
+import static org.apache.lucene.analysis.morph.BinaryDictionary.DICT_FILENAME_SUFFIX;
+import static org.apache.lucene.analysis.morph.BinaryDictionary.POSDICT_FILENAME_SUFFIX;
+import static org.apache.lucene.analysis.morph.BinaryDictionary.TARGETMAP_FILENAME_SUFFIX;
 
 import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.lucene.analysis.ko.util.DictionaryBuilder;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.junit.Before;
 
 public class TestExternalDictionary extends LuceneTestCase {
 
   private Path dir;
+  private ClassLoader loader = getClass().getClassLoader();
 
   @Override
   @Before
@@ -96,6 +96,34 @@ public class TestExternalDictionary extends LuceneTestCase {
     String dictionaryPath = ConnectionCosts.class.getName().replace('.', '/');
     ConnectionCosts cc =
         new ConnectionCosts(dir.resolve(dictionaryPath + ConnectionCosts.FILENAME_SUFFIX));
+    assertEquals(0, cc.get(1, 1));
+  }
+
+  public void testLoadExternalUrlTokenInfoDictionary() throws Exception {
+    String dictionaryPath = TokenInfoDictionary.class.getName().replace('.', '/');
+    TokenInfoDictionary dict =
+        new TokenInfoDictionary(
+            loader.getResource(dictionaryPath + TARGETMAP_FILENAME_SUFFIX),
+            loader.getResource(dictionaryPath + POSDICT_FILENAME_SUFFIX),
+            loader.getResource(dictionaryPath + DICT_FILENAME_SUFFIX),
+            loader.getResource(dictionaryPath + FST_FILENAME_SUFFIX));
+    assertNotNull(dict.getFST());
+  }
+
+  public void testLoadExternalUrlUnknownDictionary() throws Exception {
+    String dictionaryPath = UnknownDictionary.class.getName().replace('.', '/');
+    UnknownDictionary dict =
+        new UnknownDictionary(
+            loader.getResource(dictionaryPath + TARGETMAP_FILENAME_SUFFIX),
+            loader.getResource(dictionaryPath + POSDICT_FILENAME_SUFFIX),
+            loader.getResource(dictionaryPath + DICT_FILENAME_SUFFIX));
+    assertNotNull(dict.getCharacterDefinition());
+  }
+
+  public void testLoadExternalUrlConnectionCosts() throws Exception {
+    String dictionaryPath = ConnectionCosts.class.getName().replace('.', '/');
+    ConnectionCosts cc =
+        new ConnectionCosts(loader.getResource(dictionaryPath + ConnectionCosts.FILENAME_SUFFIX));
     assertEquals(0, cc.get(1, 1));
   }
 }
