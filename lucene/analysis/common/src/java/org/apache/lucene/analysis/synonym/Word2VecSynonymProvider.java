@@ -17,8 +17,8 @@
 
 package org.apache.lucene.analysis.synonym;
 
-import static org.apache.lucene.codecs.lucene91.Lucene91HnswVectorsFormat.DEFAULT_BEAM_WIDTH;
-import static org.apache.lucene.codecs.lucene91.Lucene91HnswVectorsFormat.DEFAULT_MAX_CONN;
+import static org.apache.lucene.codecs.lucene92.Lucene92HnswVectorsFormat.DEFAULT_BEAM_WIDTH;
+import static org.apache.lucene.codecs.lucene92.Lucene92HnswVectorsFormat.DEFAULT_MAX_CONN;
 
 import java.io.IOException;
 import java.util.HashMap;
