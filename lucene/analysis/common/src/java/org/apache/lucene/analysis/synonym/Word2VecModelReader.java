@@ -21,7 +21,8 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Generic synonym provider
+ * Generic synonym provider interface. Each class extending this interface must be able to read a
+ * Word2Vec model format
  *
  * @lucene.experimental
  */

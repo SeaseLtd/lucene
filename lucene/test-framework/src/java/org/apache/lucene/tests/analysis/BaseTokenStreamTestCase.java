@@ -37,6 +37,7 @@ import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexableFieldType;
+import org.apache.lucene.search.BoostAttribute;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.index.RandomIndexWriter;
 import org.apache.lucene.tests.util.LuceneTestCase;
@@ -136,7 +137,8 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
       boolean[] keywordAtts,
       boolean graphOffsetsAreCorrect,
       byte[][] payloads,
-      int[] flags)
+      int[] flags,
+      float[] boost)
       throws IOException {
     assertNotNull(output);
     CheckClearAttributesAttribute checkClearAtt =
@@ -203,6 +205,12 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
       flagsAtt = ts.getAttribute(FlagsAttribute.class);
     }
 
+    BoostAttribute boostAtt = null;
+    if (boost != null) {
+      assertTrue("has no BoostAttribute", ts.hasAttribute(BoostAttribute.class));
+      boostAtt = ts.getAttribute(BoostAttribute.class);
+    }
+
     // Maps position to the start/end offset:
     final Map<Integer, Integer> posToStartOffset = new HashMap<>();
     final Map<Integer, Integer> posToEndOffset = new HashMap<>();
@@ -225,6 +233,7 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
       if (payloadAtt != null)
         payloadAtt.setPayload(new BytesRef(new byte[] {0x00, -0x21, 0x12, -0x43, 0x24}));
       if (flagsAtt != null) flagsAtt.setFlags(~0); // all 1's
+      if (boostAtt != null) boostAtt.setBoost(-1f);
 
       checkClearAtt.getAndResetClearCalled(); // reset it, because we called clearAttribute() before
       assertTrue("token " + i + " does not exist", ts.incrementToken());
@@ -259,6 +268,9 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
       }
       if (flagsAtt != null) {
         assertEquals("flagsAtt " + i + " term=" + termAtt, flags[i], flagsAtt.getFlags());
+      }
+      if (boostAtt != null) {
+        assertEquals("boostAtt " + i + " term=" + termAtt, boost[i], boostAtt.getBoost(), 0.001);
       }
       if (payloads != null) {
         if (payloads[i] != null) {
@@ -387,6 +399,7 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
     if (payloadAtt != null)
       payloadAtt.setPayload(new BytesRef(new byte[] {0x00, -0x21, 0x12, -0x43, 0x24}));
     if (flagsAtt != null) flagsAtt.setFlags(~0); // all 1's
+    if (boostAtt != null) boostAtt.setBoost(-1);
 
     checkClearAtt.getAndResetClearCalled(); // reset it, because we called clearAttribute() before
 
@@ -406,6 +419,38 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
     }
 
     ts.close();
+  }
+
+  public static void assertTokenStreamContents(
+          TokenStream ts,
+          String[] output,
+          int[] startOffsets,
+          int[] endOffsets,
+          String[] types,
+          int[] posIncrements,
+          int[] posLengths,
+          Integer finalOffset,
+          Integer finalPosInc,
+          boolean[] keywordAtts,
+          boolean graphOffsetsAreCorrect,
+          byte[][] payloads,
+          int[] flags)
+          throws IOException {
+    assertTokenStreamContents(
+            ts,
+            output,
+            startOffsets,
+            endOffsets,
+            types,
+            posIncrements,
+            posLengths,
+            finalOffset,
+            finalPosInc,
+            keywordAtts,
+            graphOffsetsAreCorrect,
+            payloads,
+            flags,
+            null);
   }
 
   public static void assertTokenStreamContents(
@@ -429,11 +474,39 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
         posIncrements,
         posLengths,
         finalOffset,
+        keywordAtts,
+        graphOffsetsAreCorrect,
+        null);
+  }
+
+  public static void assertTokenStreamContents(
+      TokenStream ts,
+      String[] output,
+      int[] startOffsets,
+      int[] endOffsets,
+      String[] types,
+      int[] posIncrements,
+      int[] posLengths,
+      Integer finalOffset,
+      boolean[] keywordAtts,
+      boolean graphOffsetsAreCorrect,
+      float[] boost)
+      throws IOException {
+    assertTokenStreamContents(
+        ts,
+        output,
+        startOffsets,
+        endOffsets,
+        types,
+        posIncrements,
+        posLengths,
+        finalOffset,
         null,
         keywordAtts,
         graphOffsetsAreCorrect,
         null,
-        null);
+        null,
+        boost);
   }
 
   public static void assertTokenStreamContents(
@@ -463,7 +536,34 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
         keywordAtts,
         graphOffsetsAreCorrect,
         payloads,
+        null,
         null);
+  }
+
+  public static void assertTokenStreamContents(
+      TokenStream ts,
+      String[] output,
+      int[] startOffsets,
+      int[] endOffsets,
+      String[] types,
+      int[] posIncrements,
+      int[] posLengths,
+      Integer finalOffset,
+      boolean graphOffsetsAreCorrect,
+      float[] boost)
+      throws IOException {
+    assertTokenStreamContents(
+        ts,
+        output,
+        startOffsets,
+        endOffsets,
+        types,
+        posIncrements,
+        posLengths,
+        finalOffset,
+        null,
+        graphOffsetsAreCorrect,
+        boost);
   }
 
   public static void assertTokenStreamContents(
@@ -487,7 +587,8 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
         posLengths,
         finalOffset,
         null,
-        graphOffsetsAreCorrect);
+        graphOffsetsAreCorrect,
+        null);
   }
 
   public static void assertTokenStreamContents(
@@ -502,6 +603,30 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
       throws IOException {
     assertTokenStreamContents(
         ts, output, startOffsets, endOffsets, types, posIncrements, posLengths, finalOffset, true);
+  }
+
+  public static void assertTokenStreamContents(
+      TokenStream ts,
+      String[] output,
+      int[] startOffsets,
+      int[] endOffsets,
+      String[] types,
+      int[] posIncrements,
+      int[] posLengths,
+      Integer finalOffset,
+      float[] boost)
+      throws IOException {
+    assertTokenStreamContents(
+        ts,
+        output,
+        startOffsets,
+        endOffsets,
+        types,
+        posIncrements,
+        posLengths,
+        finalOffset,
+        true,
+        boost);
   }
 
   public static void assertTokenStreamContents(
@@ -631,6 +756,21 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
       int[] posIncrements,
       int[] posLengths)
       throws IOException {
+    assertAnalyzesTo(
+        a, input, output, startOffsets, endOffsets, types, posIncrements, posLengths, null);
+  }
+
+  public static void assertAnalyzesTo(
+      Analyzer a,
+      String input,
+      String[] output,
+      int[] startOffsets,
+      int[] endOffsets,
+      String[] types,
+      int[] posIncrements,
+      int[] posLengths,
+      float[] boost)
+      throws IOException {
     assertTokenStreamContents(
         a.tokenStream("dummy", input),
         output,
@@ -639,7 +779,8 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
         types,
         posIncrements,
         posLengths,
-        input.length());
+        input.length(),
+        boost);
     checkResetException(a, input);
     checkAnalysisConsistency(random(), a, true, input);
   }
