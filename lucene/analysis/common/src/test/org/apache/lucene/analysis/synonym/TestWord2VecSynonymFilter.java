@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.tests.analysis.BaseTokenStreamTestCase;
 import org.apache.lucene.tests.analysis.MockTokenizer;
 
@@ -38,20 +39,32 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
 
     Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(terms));
 
+    float similarityWithB =
+        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(1).getVector());
+    float similarityWithC =
+        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(2).getVector());
+    float similarityWithD =
+        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(3).getVector());
+    float similarityWithE =
+        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(4).getVector());
+
     Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
     assertAnalyzesTo(
         a,
-        "pre a post",
-        new String[] {"pre", "a", "d", "e", "c", "b", "post"},
-        new int[] {0, 4, 4, 4, 4, 4, 6},
-        new int[] {3, 5, 5, 5, 5, 5, 10},
-        new String[] {"word", "word", "SYNONYM", "SYNONYM", "SYNONYM", "SYNONYM", "word"},
-        new int[] {1, 1, 0, 0, 0, 0, 1},
-        new int[] {1, 1, 1, 1, 1, 1, 1});
+        "pre a post", // input
+        new String[] {"pre", "a", "d", "e", "c", "b", "post"}, // output
+        new int[] {0, 4, 4, 4, 4, 4, 6}, // start offset
+        new int[] {3, 5, 5, 5, 5, 5, 10}, // end offset
+        new String[] {"word", "word", "SYNONYM", "SYNONYM", "SYNONYM", "SYNONYM", "word"}, // types
+        new int[] {1, 1, 0, 0, 0, 0, 1}, // posIncrements
+        new int[] {1, 1, 1, 1, 1, 1, 1}, // posLenghts
+        new float[] {
+          1, 1, similarityWithD, similarityWithE, similarityWithC, similarityWithB, 1
+        }); // boost
     a.close();
   }
 
-  public void testBasicTwoOutput() throws Exception {
+  public void synonymExpansion_twoCandidates_shouldBothBeExpanded() throws Exception {
     List<Word2VecSynonymTerm> terms =
         List.of(
             new Word2VecSynonymTerm("a", new float[] {10, 10}),
@@ -65,22 +78,43 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
 
     Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(terms));
 
+    float similarityWithB =
+        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(1).getVector());
+    float similarityWithC =
+        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(2).getVector());
+    float similarityWithD =
+        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(3).getVector());
+    float similarityWithE =
+        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(4).getVector());
+    float similarityWithAfter =
+        VectorSimilarityFunction.COSINE.compare(terms.get(6).getVector(), terms.get(7).getVector());
+
     Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
     assertAnalyzesTo(
         a,
-        "pre a post",
-        new String[] {"pre", "a", "d", "e", "c", "b", "post", "after"},
-        new int[] {0, 4, 4, 4, 4, 4, 6, 6},
-        new int[] {3, 5, 5, 5, 5, 5, 10, 10},
-        new String[] {
+        "pre a post", // input
+        new String[] {"pre", "a", "d", "e", "c", "b", "post", "after"}, // output
+        new int[] {0, 4, 4, 4, 4, 4, 6, 6}, // start offset
+        new int[] {3, 5, 5, 5, 5, 5, 10, 10}, // end offset
+        new String[] { // types
           "word", "word", "SYNONYM", "SYNONYM", "SYNONYM", "SYNONYM", "word", "SYNONYM"
         },
-        new int[] {1, 1, 0, 0, 0, 0, 1, 0},
-        new int[] {1, 1, 1, 1, 1, 1, 1, 1});
+        new int[] {1, 1, 0, 0, 0, 0, 1, 0}, // posIncrements
+        new int[] {1, 1, 1, 1, 1, 1, 1, 1}, // posLengths
+        new float[] {
+          1,
+          1,
+          similarityWithD,
+          similarityWithE,
+          similarityWithC,
+          similarityWithB,
+          1,
+          similarityWithAfter
+        }); // boost
     a.close();
   }
 
-  public void testNoOutput() throws Exception {
+  public void synonymExpansion_basicString_shouldNoneExpanded() throws Exception {
     List<Word2VecSynonymTerm> terms =
         List.of(
             new Word2VecSynonymTerm("a", new float[] {10, 10}),
@@ -93,13 +127,14 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
     Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
     assertAnalyzesTo(
         a,
-        "pre a post",
-        new String[] {"pre", "a", "post"},
-        new int[] {0, 4, 6},
-        new int[] {3, 5, 10},
-        new String[] {"word", "word", "word"},
-        new int[] {1, 1, 1},
-        new int[] {1, 1, 1});
+        "pre a post", // input
+        new String[] {"pre", "a", "post"}, // output
+        new int[] {0, 4, 6}, // start offset
+        new int[] {3, 5, 10}, // end offset
+        new String[] {"word", "word", "word"}, // types
+        new int[] {1, 1, 1}, // posIncrements
+        new int[] {1, 1, 1}, // posLengths
+        new float[] {1, 1, 1}); // boost
     a.close();
   }
 
@@ -111,7 +146,6 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
         // Make a local variable so testRandomHuge doesn't share it across threads!
         Word2VecSynonymFilter synFilter =
             new Word2VecSynonymFilter(tokenizer, synonymProvider, maxResult, accuracy);
-        //        TestWord2VecSynonymFilter.this.synFilter = synFilter;
         return new TokenStreamComponents(tokenizer, synFilter);
       }
     };

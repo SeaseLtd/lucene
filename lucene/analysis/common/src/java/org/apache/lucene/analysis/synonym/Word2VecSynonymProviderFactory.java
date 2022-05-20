@@ -34,18 +34,18 @@ public class Word2VecSynonymProviderFactory {
     DL4J
   }
 
-  private static Map<String, SynonymProvider> sentenceModels = new ConcurrentHashMap<>();
+  private static Map<String, SynonymProvider> word2vecSynonymProviders = new ConcurrentHashMap<>();
 
   public static SynonymProvider getSynonymProvider(
       ResourceLoader loader, String model, Word2VecSupportedFormats format) throws IOException {
-    SynonymProvider synonymProvider = sentenceModels.get(model);
+    SynonymProvider synonymProvider = word2vecSynonymProviders.get(model);
     if (synonymProvider == null) {
       try (InputStream stream = loader.openResource(model)) {
         try (Word2VecModelReader reader = getModelReader(model, format, stream)) {
           synonymProvider = new Word2VecSynonymProvider(reader.read());
         }
       }
-      sentenceModels.put(model, synonymProvider);
+      word2vecSynonymProviders.put(model, synonymProvider);
     }
     return synonymProvider;
   }
@@ -61,6 +61,6 @@ public class Word2VecSynonymProviderFactory {
 
   // keeps unit test from blowing out memory
   public static void clearModels() {
-    sentenceModels.clear();
+    word2vecSynonymProviders.clear();
   }
 }

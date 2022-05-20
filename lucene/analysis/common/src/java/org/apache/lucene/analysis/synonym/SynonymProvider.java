@@ -61,7 +61,7 @@ public interface SynonymProvider {
 
     @Override
     public String toString() {
-      return "WeightedSynonym{" + "term='" + term + '\'' + ", weight=" + weight + '}';
+      return "WeightedSynonym{term='" + term + '\'' + ", weight=" + weight + '}';
     }
   }
 }
