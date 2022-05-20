@@ -93,9 +93,9 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
       int size = synonyms.size();
       for (int i = 0; i < size; i++) {
+        float similarity = synonyms.topScore();
         int id = synonyms.pop();
         Word2VecSynonymTerm term = synonymVector.getSynonymTerm(id);
-        float similarity = similarityFunction.compare(term.getVector(), query);
         if (!term.getWord().equals(token) && similarity >= accuracy) {
           result.addFirst(new WeightedSynonym(term.getWord(), similarity));
         }
@@ -109,13 +109,13 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     private final int size;
     private final int dimension;
     private final Word2VecSynonymTerm[] data;
-    private final Map<String, Word2VecSynonymTerm> word2VecMap;
+    private final Map<String, Word2VecSynonymTerm> word2Vec;
 
     public VectorProducer(Word2VecModelStream vectorStream) {
       this.size = vectorStream.getSize();
-      this.dimension = vectorStream.getDimension();
+      this.dimension = vectorStream.getVectorDimension();
       this.data = new Word2VecSynonymTerm[size];
-      this.word2VecMap = new HashMap<>();
+      this.word2Vec = new HashMap<>();
 
       AtomicInteger loaded = new AtomicInteger(0);
       vectorStream
@@ -133,7 +133,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
                           + 2); // +2 because the first line of the model file is the header
                 }
                 this.data[loaded.getAndIncrement()] = synTerm;
-                this.word2VecMap.put(synTerm.getWord(), synTerm);
+                this.word2Vec.put(synTerm.getWord(), synTerm);
               });
 
       if (loaded.get() != size) {
@@ -147,7 +147,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
     @Override
     public RandomAccessVectorValues randomAccess() {
-      return new SynonymVector(data, word2VecMap, size, dimension);
+      return new SynonymVector(data, word2Vec, size, dimension);
     }
   }
 

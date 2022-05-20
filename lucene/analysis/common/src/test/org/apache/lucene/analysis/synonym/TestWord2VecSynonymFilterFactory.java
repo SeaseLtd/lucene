@@ -24,7 +24,7 @@ import org.apache.lucene.util.ResourceLoader;
 public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTestCase {
 
   public static final String FACTORY_NAME = "Word2VecSynonym";
-  private static final String WORD2VEC_MODEL_FILE = "word2vec-model.txt";
+  private static final String WORD2VEC_MODEL_FILE = "word2vec-model.zip";
 
   public void testInform() throws Exception {
     ResourceLoader loader = new ClasspathResourceLoader(getClass());
