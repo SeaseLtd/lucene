@@ -28,12 +28,12 @@ import java.util.stream.Stream;
 public class Word2VecModelStream {
 
   private final int size;
-  private final int dimension;
+  private final int vectorDimension;
   private final Stream<Word2VecSynonymTerm> modelStream;
 
   public Word2VecModelStream(int size, int dimension, Stream<Word2VecSynonymTerm> modelStream) {
     this.size = size;
-    this.dimension = dimension;
+    this.vectorDimension = dimension;
     this.modelStream = modelStream;
   }
 
@@ -41,8 +41,8 @@ public class Word2VecModelStream {
     return size;
   }
 
-  public int getDimension() {
-    return dimension;
+  public int getVectorDimension() {
+    return vectorDimension;
   }
 
   public Stream<Word2VecSynonymTerm> getModelStream() {
