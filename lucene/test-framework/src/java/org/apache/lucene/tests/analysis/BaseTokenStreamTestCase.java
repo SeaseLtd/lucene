@@ -422,35 +422,35 @@ public abstract class BaseTokenStreamTestCase extends LuceneTestCase {
   }
 
   public static void assertTokenStreamContents(
-          TokenStream ts,
-          String[] output,
-          int[] startOffsets,
-          int[] endOffsets,
-          String[] types,
-          int[] posIncrements,
-          int[] posLengths,
-          Integer finalOffset,
-          Integer finalPosInc,
-          boolean[] keywordAtts,
-          boolean graphOffsetsAreCorrect,
-          byte[][] payloads,
-          int[] flags)
-          throws IOException {
+      TokenStream ts,
+      String[] output,
+      int[] startOffsets,
+      int[] endOffsets,
+      String[] types,
+      int[] posIncrements,
+      int[] posLengths,
+      Integer finalOffset,
+      Integer finalPosInc,
+      boolean[] keywordAtts,
+      boolean graphOffsetsAreCorrect,
+      byte[][] payloads,
+      int[] flags)
+      throws IOException {
     assertTokenStreamContents(
-            ts,
-            output,
-            startOffsets,
-            endOffsets,
-            types,
-            posIncrements,
-            posLengths,
-            finalOffset,
-            finalPosInc,
-            keywordAtts,
-            graphOffsetsAreCorrect,
-            payloads,
-            flags,
-            null);
+        ts,
+        output,
+        startOffsets,
+        endOffsets,
+        types,
+        posIncrements,
+        posLengths,
+        finalOffset,
+        finalPosInc,
+        keywordAtts,
+        graphOffsetsAreCorrect,
+        payloads,
+        flags,
+        null);
   }
 
   public static void assertTokenStreamContents(
