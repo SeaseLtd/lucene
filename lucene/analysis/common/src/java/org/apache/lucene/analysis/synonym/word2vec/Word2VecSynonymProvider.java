@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym;
+package org.apache.lucene.analysis.synonym.word2vec;
 
 import static org.apache.lucene.codecs.lucene92.Lucene92HnswVectorsFormat.DEFAULT_BEAM_WIDTH;
 import static org.apache.lucene.codecs.lucene92.Lucene92HnswVectorsFormat.DEFAULT_MAX_CONN;
@@ -69,8 +69,8 @@ public class Word2VecSynonymProvider implements SynonymProvider {
   }
 
   @Override
-  public List<WeightedSynonym> getSynonyms(String token, int maxResult, float accuracy)
-      throws IOException {
+  public List<WeightedSynonym> getSynonyms(
+      String token, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException {
 
     if (token == null) {
       throw new IllegalArgumentException("Term must not be null");
@@ -84,7 +84,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
       NeighborQueue synonyms =
           HnswGraphSearcher.search(
               query,
-              maxResult,
+              maxSynonymsPerTerm,
               synonymVector,
               similarityFunction,
               hnswGraph,
@@ -96,7 +96,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
         float similarity = synonyms.topScore();
         int id = synonyms.pop();
         Word2VecSynonymTerm term = synonymVector.getSynonymTerm(id);
-        if (!term.getWord().equals(token) && similarity >= accuracy) {
+        if (!term.getWord().equals(token) && similarity >= minAcceptedSimilarity) {
           result.addFirst(new WeightedSynonym(term.getWord(), similarity));
         }
       }
@@ -106,15 +106,15 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
   static class VectorProducer implements RandomAccessVectorValuesProducer {
 
-    private final int size;
-    private final int dimension;
+    private final int dictionarySize;
+    private final int vectorDimension;
     private final Word2VecSynonymTerm[] data;
     private final Map<String, Word2VecSynonymTerm> word2Vec;
 
     public VectorProducer(Word2VecModelStream vectorStream) {
-      this.size = vectorStream.getSize();
-      this.dimension = vectorStream.getVectorDimension();
-      this.data = new Word2VecSynonymTerm[size];
+      this.dictionarySize = vectorStream.getDictionarySize();
+      this.vectorDimension = vectorStream.getVectorDimension();
+      this.data = new Word2VecSynonymTerm[dictionarySize];
       this.word2Vec = new HashMap<>();
 
       AtomicInteger loaded = new AtomicInteger(0);
@@ -122,10 +122,10 @@ public class Word2VecSynonymProvider implements SynonymProvider {
           .getModelStream()
           .forEach(
               synTerm -> {
-                if (this.dimension != synTerm.getVector().length) {
+                if (this.vectorDimension != synTerm.getVector().length) {
                   throw new IllegalArgumentException(
                       "Word2Vec model file corrupted. Declared vectors of size "
-                          + this.dimension
+                          + this.vectorDimension
                           + " but found vector of size "
                           + synTerm.getVector().length
                           + " at line "
@@ -136,10 +136,10 @@ public class Word2VecSynonymProvider implements SynonymProvider {
                 this.word2Vec.put(synTerm.getWord(), synTerm);
               });
 
-      if (loaded.get() != size) {
+      if (loaded.get() != dictionarySize) {
         throw new IllegalArgumentException(
             "Word2Vec model file corrupted. Declared "
-                + size
+                + dictionarySize
                 + " records but found "
                 + loaded.get());
       }
@@ -147,14 +147,14 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
     @Override
     public RandomAccessVectorValues randomAccess() {
-      return new SynonymVector(data, word2Vec, size, dimension);
+      return new SynonymVector(data, word2Vec, dictionarySize, vectorDimension);
     }
   }
 
   static class SynonymVector extends VectorValues implements RandomAccessVectorValues {
 
-    private final int size;
-    private final int dimension;
+    private final int dictionarySize;
+    private final int vectorDimension;
     private final Word2VecSynonymTerm[] data;
     private final Map<String, Word2VecSynonymTerm> word2VecMap;
 
@@ -163,10 +163,10 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     SynonymVector(
         Word2VecSynonymTerm[] data,
         Map<String, Word2VecSynonymTerm> word2VecMap,
-        int size,
-        int dimension) {
-      this.size = size;
-      this.dimension = dimension;
+        int dictionarySize,
+        int vectorDimension) {
+      this.dictionarySize = dictionarySize;
+      this.vectorDimension = vectorDimension;
       this.data = data;
       this.word2VecMap = word2VecMap;
     }
@@ -192,12 +192,12 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
     @Override
     public int dimension() {
-      return dimension;
+      return vectorDimension;
     }
 
     @Override
     public int size() {
-      return size;
+      return dictionarySize;
     }
 
     @Override
@@ -217,7 +217,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
     @Override
     public int advance(int target) throws IOException {
-      if (target >= 0 && target < size) {
+      if (target >= 0 && target < dictionarySize) {
         currentIndex = target;
       } else {
         currentIndex = NO_MORE_DOCS;
@@ -227,7 +227,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
     @Override
     public long cost() {
-      return size;
+      return dictionarySize;
     }
   }
 }

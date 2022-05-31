@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym;
+package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.lucene.analysis.TokenFilterFactory;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.synonym.Word2VecSynonymProviderFactory.Word2VecSupportedFormats;
+import org.apache.lucene.analysis.synonym.word2vec.Word2VecSynonymProviderFactory.Word2VecSupportedFormats;
 import org.apache.lucene.util.ResourceLoader;
 import org.apache.lucene.util.ResourceLoaderAware;
 
@@ -38,11 +38,11 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
   /** SPI name */
   public static final String NAME = "Word2VecSynonym";
 
-  public static final int DEFAULT_MAX_RESULT = 10;
-  public static final float DEFAULT_ACCURACY = 0.7f;
+  public static final int DEFAULT_MAX_SYNONYMS_PER_TERM = 10;
+  public static final float DEFAULT_MIN_ACCEPTED_SIMILARITY = 0.7f;
 
-  private final int maxResult;
-  private final float accuracy;
+  private final int maxSynonymsPerTerm;
+  private final float minAcceptedSimilarity;
   private final Word2VecSupportedFormats format;
   private final String word2vecModel;
 
@@ -50,8 +50,9 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
 
   public Word2VecSynonymFilterFactory(Map<String, String> args) {
     super(args);
-    this.maxResult = getInt(args, "maxResult", DEFAULT_MAX_RESULT);
-    this.accuracy = getFloat(args, "accuracy", DEFAULT_ACCURACY);
+    this.maxSynonymsPerTerm = getInt(args, "maxSynonymsPerTerm", DEFAULT_MAX_SYNONYMS_PER_TERM);
+    this.minAcceptedSimilarity =
+        getFloat(args, "minAcceptedSimilarity", DEFAULT_MIN_ACCEPTED_SIMILARITY);
     this.word2vecModel = require(args, "model");
 
     String modelFormat = get(args, "format", "dl4j").toUpperCase(Locale.ROOT);
@@ -64,13 +65,14 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
     if (!args.isEmpty()) {
       throw new IllegalArgumentException("Unknown parameters: " + args);
     }
-    if (accuracy <= 0 || accuracy > 1) {
+    if (minAcceptedSimilarity <= 0 || minAcceptedSimilarity > 1) {
       throw new IllegalArgumentException(
-          "Accuracy must be in the range (0, 1]. Found: " + accuracy);
+          "minAcceptedSimilarity must be in the range (0, 1]. Found: " + minAcceptedSimilarity);
     }
-    if (maxResult <= 0) {
+    if (maxSynonymsPerTerm <= 0) {
       throw new IllegalArgumentException(
-          "maxResult must be a positive integer greater than 0. Found: " + maxResult);
+          "maxSynonymsPerTerm must be a positive integer greater than 0. Found: "
+              + maxSynonymsPerTerm);
     }
   }
 
@@ -89,7 +91,8 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
     // original stream
     return synonymProvider == null
         ? input
-        : new Word2VecSynonymFilter(input, synonymProvider, maxResult, accuracy);
+        : new Word2VecSynonymFilter(
+            input, synonymProvider, maxSynonymsPerTerm, minAcceptedSimilarity);
   }
 
   @Override

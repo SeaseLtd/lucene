@@ -15,40 +15,51 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym;
+package org.apache.lucene.analysis.synonym.word2vec;
 
 import org.apache.lucene.tests.analysis.BaseTokenStreamFactoryTestCase;
 import org.apache.lucene.util.ClasspathResourceLoader;
 import org.apache.lucene.util.ResourceLoader;
+import org.junit.Test;
 
 public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTestCase {
 
   public static final String FACTORY_NAME = "Word2VecSynonym";
   private static final String WORD2VEC_MODEL_FILE = "word2vec-model.zip";
 
+  @Test
   public void testInform() throws Exception {
     ResourceLoader loader = new ClasspathResourceLoader(getClass());
     assertTrue("loader is null and it shouldn't be", loader != null);
     Word2VecSynonymFilterFactory factory =
         (Word2VecSynonymFilterFactory)
-            tokenFilterFactory(FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "0.7");
+            tokenFilterFactory(
+                FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "minAcceptedSimilarity", "0.7");
 
     SynonymProvider synonymProvider = factory.getSynonymProvider();
     assertNotEquals(null, synonymProvider);
   }
 
-  public void testNoModelParam() throws Exception {
+  @Test
+  public void missingRequiredArgument_shouldThrowException() throws Exception {
     IllegalArgumentException expected =
         expectThrows(
             IllegalArgumentException.class,
             () -> {
               tokenFilterFactory(
-                  FACTORY_NAME, "format", "dl4j", "accuracy", "0.7", "maxResult", "10");
+                  FACTORY_NAME,
+                  "format",
+                  "dl4j",
+                  "minAcceptedSimilarity",
+                  "0.7",
+                  "maxSynonymsPerTerm",
+                  "10");
             });
     assertTrue(expected.getMessage().contains("Configuration Error: missing parameter 'model'"));
   }
 
-  public void testUnsupportedModelFormat() throws Exception {
+  @Test
+  public void unsupportedModelFormat_shouldThrowException() throws Exception {
     IllegalArgumentException expected =
         expectThrows(
             IllegalArgumentException.class,
@@ -59,7 +70,8 @@ public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTest
     assertTrue(expected.getMessage().contains("Model format not supported"));
   }
 
-  public void testBogusArguments() throws Exception {
+  @Test
+  public void bogusArgument_shouldThrowException() throws Exception {
     IllegalArgumentException expected =
         expectThrows(
             IllegalArgumentException.class,
@@ -70,47 +82,78 @@ public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTest
     assertTrue(expected.getMessage().contains("Unknown parameters"));
   }
 
-  public void testIllegalArgument() throws Exception {
+  @Test
+  public void illegalArguments_shouldThrowException() throws Exception {
     IllegalArgumentException expected =
         expectThrows(
             IllegalArgumentException.class,
             () -> {
               tokenFilterFactory(
-                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "2", "maxResult", "10");
-            });
-    assertTrue(expected.getMessage().contains("Accuracy must be in the range (0, 1]. Found: 2"));
-
-    expected =
-        expectThrows(
-            IllegalArgumentException.class,
-            () -> {
-              tokenFilterFactory(
-                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "0", "maxResult", "10");
-            });
-    assertTrue(expected.getMessage().contains("Accuracy must be in the range (0, 1]. Found: 0"));
-
-    expected =
-        expectThrows(
-            IllegalArgumentException.class,
-            () -> {
-              tokenFilterFactory(
-                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "0.7", "maxResult", "-1");
+                  FACTORY_NAME,
+                  "model",
+                  WORD2VEC_MODEL_FILE,
+                  "minAcceptedSimilarity",
+                  "2",
+                  "maxSynonymsPerTerm",
+                  "10");
             });
     assertTrue(
         expected
             .getMessage()
-            .contains("maxResult must be a positive integer greater than 0. Found: -1"));
+            .contains("minAcceptedSimilarity must be in the range (0, 1]. Found: 2"));
 
     expected =
         expectThrows(
             IllegalArgumentException.class,
             () -> {
               tokenFilterFactory(
-                  FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "accuracy", "0.7", "maxResult", "0");
+                  FACTORY_NAME,
+                  "model",
+                  WORD2VEC_MODEL_FILE,
+                  "minAcceptedSimilarity",
+                  "0",
+                  "maxSynonymsPerTerm",
+                  "10");
             });
     assertTrue(
         expected
             .getMessage()
-            .contains("maxResult must be a positive integer greater than 0. Found: 0"));
+            .contains("minAcceptedSimilarity must be in the range (0, 1]. Found: 0"));
+
+    expected =
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tokenFilterFactory(
+                  FACTORY_NAME,
+                  "model",
+                  WORD2VEC_MODEL_FILE,
+                  "minAcceptedSimilarity",
+                  "0.7",
+                  "maxSynonymsPerTerm",
+                  "-1");
+            });
+    assertTrue(
+        expected
+            .getMessage()
+            .contains("maxSynonymsPerTerm must be a positive integer greater than 0. Found: -1"));
+
+    expected =
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> {
+              tokenFilterFactory(
+                  FACTORY_NAME,
+                  "model",
+                  WORD2VEC_MODEL_FILE,
+                  "minAcceptedSimilarity",
+                  "0.7",
+                  "maxSynonymsPerTerm",
+                  "0");
+            });
+    assertTrue(
+        expected
+            .getMessage()
+            .contains("maxSynonymsPerTerm must be a positive integer greater than 0. Found: 0"));
   }
 }
