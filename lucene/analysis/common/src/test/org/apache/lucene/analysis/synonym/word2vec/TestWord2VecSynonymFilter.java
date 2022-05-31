@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym;
+package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -24,11 +24,13 @@ import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.tests.analysis.BaseTokenStreamTestCase;
 import org.apache.lucene.tests.analysis.MockTokenizer;
+import org.junit.Test;
 
 public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
 
-  public void testBasicOutput() throws Exception {
-    List<Word2VecSynonymTerm> terms =
+  @Test
+  public void synonymExpansion_oneCandidate_shouldBeExpanded() throws Exception {
+    List<Word2VecSynonymTerm> word2VecModel =
         List.of(
             new Word2VecSynonymTerm("a", new float[] {10, 10}),
             new Word2VecSynonymTerm("b", new float[] {10, 8}),
@@ -37,16 +39,22 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
             new Word2VecSynonymTerm("e", new float[] {99, 101}),
             new Word2VecSynonymTerm("f", new float[] {1, 10}));
 
-    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(terms));
+    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(word2VecModel));
+
+    Word2VecSynonymTerm inputTerm = word2VecModel.get(0);
 
     float similarityWithB =
-        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(1).getVector());
+        VectorSimilarityFunction.COSINE.compare(
+            inputTerm.getVector(), word2VecModel.get(1).getVector());
     float similarityWithC =
-        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(2).getVector());
+        VectorSimilarityFunction.COSINE.compare(
+            inputTerm.getVector(), word2VecModel.get(2).getVector());
     float similarityWithD =
-        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(3).getVector());
+        VectorSimilarityFunction.COSINE.compare(
+            inputTerm.getVector(), word2VecModel.get(3).getVector());
     float similarityWithE =
-        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(4).getVector());
+        VectorSimilarityFunction.COSINE.compare(
+            inputTerm.getVector(), word2VecModel.get(4).getVector());
 
     Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
     assertAnalyzesTo(
@@ -64,8 +72,9 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
     a.close();
   }
 
+  @Test
   public void synonymExpansion_twoCandidates_shouldBothBeExpanded() throws Exception {
-    List<Word2VecSynonymTerm> terms =
+    List<Word2VecSynonymTerm> word2VecModel =
         List.of(
             new Word2VecSynonymTerm("a", new float[] {10, 10}),
             new Word2VecSynonymTerm("b", new float[] {10, 8}),
@@ -76,18 +85,26 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
             new Word2VecSynonymTerm("post", new float[] {-10, -11}),
             new Word2VecSynonymTerm("after", new float[] {-8, -10}));
 
-    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(terms));
+    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(word2VecModel));
+
+    Word2VecSynonymTerm firstInputTerm = word2VecModel.get(0);
+    Word2VecSynonymTerm secondInputTerm = word2VecModel.get(6);
 
     float similarityWithB =
-        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(1).getVector());
+        VectorSimilarityFunction.COSINE.compare(
+            firstInputTerm.getVector(), word2VecModel.get(1).getVector());
     float similarityWithC =
-        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(2).getVector());
+        VectorSimilarityFunction.COSINE.compare(
+            firstInputTerm.getVector(), word2VecModel.get(2).getVector());
     float similarityWithD =
-        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(3).getVector());
+        VectorSimilarityFunction.COSINE.compare(
+            firstInputTerm.getVector(), word2VecModel.get(3).getVector());
     float similarityWithE =
-        VectorSimilarityFunction.COSINE.compare(terms.get(0).getVector(), terms.get(4).getVector());
+        VectorSimilarityFunction.COSINE.compare(
+            firstInputTerm.getVector(), word2VecModel.get(4).getVector());
     float similarityWithAfter =
-        VectorSimilarityFunction.COSINE.compare(terms.get(6).getVector(), terms.get(7).getVector());
+        VectorSimilarityFunction.COSINE.compare(
+            secondInputTerm.getVector(), word2VecModel.get(7).getVector());
 
     Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
     assertAnalyzesTo(
@@ -114,15 +131,17 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
     a.close();
   }
 
-  public void synonymExpansion_basicString_shouldNoneExpanded() throws Exception {
-    List<Word2VecSynonymTerm> terms =
+  @Test
+  public void synonymExpansion_forMinAcceptedSimilarity_shouldExpandToNoneSynonyms()
+      throws Exception {
+    List<Word2VecSynonymTerm> word2VecModel =
         List.of(
             new Word2VecSynonymTerm("a", new float[] {10, 10}),
             new Word2VecSynonymTerm("b", new float[] {-10, -8}),
             new Word2VecSynonymTerm("c", new float[] {-9, -10}),
             new Word2VecSynonymTerm("f", new float[] {-1, -10}));
 
-    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(terms));
+    Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(word2VecModel));
 
     Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
     assertAnalyzesTo(
@@ -138,23 +157,25 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
     a.close();
   }
 
-  private Analyzer getAnalyzer(SynonymProvider synonymProvider, int maxResult, float accuracy) {
+  private Analyzer getAnalyzer(
+      SynonymProvider synonymProvider, int maxSynonymsPerTerm, float minAcceptedSimilarity) {
     return new Analyzer() {
       @Override
       protected TokenStreamComponents createComponents(String fieldName) {
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE, false);
         // Make a local variable so testRandomHuge doesn't share it across threads!
         Word2VecSynonymFilter synFilter =
-            new Word2VecSynonymFilter(tokenizer, synonymProvider, maxResult, accuracy);
+            new Word2VecSynonymFilter(
+                tokenizer, synonymProvider, maxSynonymsPerTerm, minAcceptedSimilarity);
         return new TokenStreamComponents(tokenizer, synFilter);
       }
     };
   }
 
   private Word2VecModelStream toStream(List<Word2VecSynonymTerm> list) {
-    int size = list.size();
-    int dimension = list.get(0).size();
+    int dictionarySize = list.size();
+    int vectorDimension = list.get(0).size();
     Stream<Word2VecSynonymTerm> modelStream = list.stream();
-    return new Word2VecModelStream(size, dimension, modelStream);
+    return new Word2VecModelStream(dictionarySize, vectorDimension, modelStream);
   }
 }
