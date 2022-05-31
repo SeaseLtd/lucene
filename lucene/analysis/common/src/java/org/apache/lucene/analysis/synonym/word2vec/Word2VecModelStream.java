@@ -15,30 +15,31 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym;
+package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.util.stream.Stream;
 
 /**
  * Word2VecModelStream is a class that embeds the Word2VecSynonymTerm stream and some properties
- * like size and vector dimensions
+ * like dictionary size and vector dimension
  *
  * @lucene.experimental
  */
 public class Word2VecModelStream {
 
-  private final int size;
+  private final int dictionarySize;
   private final int vectorDimension;
   private final Stream<Word2VecSynonymTerm> modelStream;
 
-  public Word2VecModelStream(int size, int dimension, Stream<Word2VecSynonymTerm> modelStream) {
-    this.size = size;
-    this.vectorDimension = dimension;
+  public Word2VecModelStream(
+      int dictionarySize, int vectorDimension, Stream<Word2VecSynonymTerm> modelStream) {
+    this.dictionarySize = dictionarySize;
+    this.vectorDimension = vectorDimension;
     this.modelStream = modelStream;
   }
 
-  public int getSize() {
-    return size;
+  public int getDictionarySize() {
+    return dictionarySize;
   }
 
   public int getVectorDimension() {

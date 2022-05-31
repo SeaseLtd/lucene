@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym;
+package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -45,28 +45,28 @@ public class Dl4jModelReader implements Word2VecModelReader {
 
   private static final String MODEL_FILE_NAME_PREFIX = "syn0";
 
-  private final String word2vecModelFile;
-  private final ZipInputStream zipfile;
+  private final String word2vecModelFilePath;
+  private final ZipInputStream zipFile;
 
-  public Dl4jModelReader(String word2vecModelFile, InputStream stream) {
-    this.word2vecModelFile = word2vecModelFile;
-    this.zipfile = new ZipInputStream(new BufferedInputStream(stream));
+  public Dl4jModelReader(String word2vecModelFilePath, InputStream stream) {
+    this.word2vecModelFilePath = word2vecModelFilePath;
+    this.zipFile = new ZipInputStream(new BufferedInputStream(stream));
   }
 
   @Override
   public Word2VecModelStream read() throws IOException {
 
     ZipEntry entry;
-    while ((entry = zipfile.getNextEntry()) != null) {
+    while ((entry = zipFile.getNextEntry()) != null) {
       String name = entry.getName();
       if (name.startsWith(MODEL_FILE_NAME_PREFIX)) {
         BufferedReader reader =
-            new BufferedReader(new InputStreamReader(zipfile, StandardCharsets.UTF_8));
+            new BufferedReader(new InputStreamReader(zipFile, StandardCharsets.UTF_8));
 
         String header = reader.readLine();
         String[] headerValues = header.split(" ");
-        int size = Integer.parseInt(headerValues[0]);
-        int dimension = Integer.parseInt(headerValues[1]);
+        int dictionarySize = Integer.parseInt(headerValues[0]);
+        int vectorDimension = Integer.parseInt(headerValues[1]);
 
         Stream<Word2VecSynonymTerm> modelStream =
             reader
@@ -83,12 +83,12 @@ public class Dl4jModelReader implements Word2VecModelReader {
                       return new Word2VecSynonymTerm(term, vector);
                     });
 
-        return new Word2VecModelStream(size, dimension, modelStream);
+        return new Word2VecModelStream(dictionarySize, vectorDimension, modelStream);
       }
     }
     throw new UnsupportedEncodingException(
         "The ZIP file '"
-            + word2vecModelFile
+            + word2vecModelFilePath
             + "' does not contain any "
             + MODEL_FILE_NAME_PREFIX
             + " file");
@@ -104,6 +104,6 @@ public class Dl4jModelReader implements Word2VecModelReader {
 
   @Override
   public void close() throws IOException {
-    zipfile.close();
+    zipFile.close();
   }
 }
