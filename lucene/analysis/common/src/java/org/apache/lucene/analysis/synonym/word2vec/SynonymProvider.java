@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym;
+package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,11 +31,12 @@ public interface SynonymProvider {
    * SynonymProvider constructor
    *
    * @param term we want to find the synonyms
-   * @param maxResult maximum number of result returned by the synonym search
-   * @param accuracy minimal value of cosign similarity between the searched vector and the
-   *     retrieved ones
+   * @param maxSynonymsPerTerm maximum number of result returned by the synonym search
+   * @param minAcceptedSimilarity minimal value of cosine similarity between the searched vector and
+   *     the retrieved ones
    */
-  List<WeightedSynonym> getSynonyms(String term, int maxResult, float accuracy) throws IOException;
+  List<WeightedSynonym> getSynonyms(
+      String term, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException;
 
   /**
    * Term with the associated weight

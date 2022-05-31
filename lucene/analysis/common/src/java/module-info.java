@@ -145,6 +145,8 @@ module org.apache.lucene.analysis.common {
   opens org.apache.lucene.analysis.tr to
       org.apache.lucene.core;
 
+  exports org.apache.lucene.analysis.synonym.word2vec;
+
   provides org.apache.lucene.analysis.CharFilterFactory with
       org.apache.lucene.analysis.charfilter.HTMLStripCharFilterFactory,
       org.apache.lucene.analysis.charfilter.MappingCharFilterFactory,
@@ -257,7 +259,7 @@ module org.apache.lucene.analysis.common {
       org.apache.lucene.analysis.sv.SwedishMinimalStemFilterFactory,
       org.apache.lucene.analysis.synonym.SynonymFilterFactory,
       org.apache.lucene.analysis.synonym.SynonymGraphFilterFactory,
-      org.apache.lucene.analysis.synonym.Word2VecSynonymFilterFactory,
+      org.apache.lucene.analysis.synonym.word2vec.Word2VecSynonymFilterFactory,
       org.apache.lucene.analysis.core.FlattenGraphFilterFactory,
       org.apache.lucene.analysis.te.TeluguNormalizationFilterFactory,
       org.apache.lucene.analysis.te.TeluguStemFilterFactory,

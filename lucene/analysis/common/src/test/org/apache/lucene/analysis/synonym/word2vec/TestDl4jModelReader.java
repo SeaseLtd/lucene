@@ -31,10 +31,12 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym;
+package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.junit.Test;
 
@@ -47,38 +49,43 @@ public class TestDl4jModelReader extends LuceneTestCase {
   Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE, stream);
 
   @Test
-  public void testReadCorrectSize() throws Exception {
+  public void read_zipFile_shouldCheckCorrectDictionarySize() throws Exception {
     Word2VecModelStream modelStream = unit.read();
     long modelStreamSize = modelStream.getModelStream().count();
-    assertEquals(modelStream.getSize(), modelStreamSize);
-    assertEquals(235, modelStream.getSize());
+    assertEquals(modelStream.getDictionarySize(), modelStreamSize);
+    long expectedDictionarySize = 235;
+    assertEquals(expectedDictionarySize, modelStream.getDictionarySize());
   }
 
   @Test
-  public void testReadCorrectVectorLength() throws Exception {
+  public void read_zipFile_shouldCheckCorrectVectorLength() throws Exception {
     Word2VecModelStream modelStream = unit.read();
     Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
     assertEquals(modelStream.getVectorDimension(), firstTerm.getVector().length);
-    assertEquals(100, modelStream.getVectorDimension());
+    int expectedVectorDimension = 100;
+    assertEquals(expectedVectorDimension, modelStream.getVectorDimension());
   }
 
   @Test
-  public void testReadCorrectTerm() throws Exception {
+  public void read_zipFile_shouldCheckCorrectTermDecoding() throws Exception {
     Word2VecModelStream modelStream = unit.read();
     Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
-    assertNotEquals("B64:aXQ=", firstTerm.getWord());
-    assertEquals("it", firstTerm.getWord());
+    String encodedFirstTerm = "B64:aXQ=";
+    assertNotEquals(encodedFirstTerm, firstTerm.getWord());
+    String expectedDecodedFirstTerm = "it";
+    assertEquals(expectedDecodedFirstTerm, firstTerm.getWord());
   }
 
   @Test
-  public void testDecodeTerm() throws Exception {
-    assertEquals("lucene", Dl4jModelReader.decodeTerm("b64:bHVjZW5l"));
-    assertEquals("lucene", Dl4jModelReader.decodeTerm("B64:bHVjZW5l"));
-    assertEquals("lucene", Dl4jModelReader.decodeTerm("lucene"));
+  public void base64encodedTerm_shouldCheckCorrectTermDecoding() throws Exception {
+    byte[] originalInput = "lucene".getBytes(StandardCharsets.UTF_8);
+    String B64encodedLuceneTerm = Base64.getEncoder().encodeToString(originalInput);
+    String word2vecEncodedLuceneTerm = "B64:" + B64encodedLuceneTerm;
+    assertEquals("lucene", Dl4jModelReader.decodeTerm(word2vecEncodedLuceneTerm));
   }
 
   @Test
-  public void testEmptyZipFile() throws Exception {
+  public void read_EmptyZipFile_shouldThrowException() throws Exception {
     try (InputStream stream =
         TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE_EMPTY)) {
       Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE_EMPTY, stream);
