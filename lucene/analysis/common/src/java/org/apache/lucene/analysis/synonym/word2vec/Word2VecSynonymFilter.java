@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym;
+package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.synonym.SynonymProvider.WeightedSynonym;
+import org.apache.lucene.analysis.synonym.SynonymGraphFilter;
+import org.apache.lucene.analysis.synonym.word2vec.SynonymProvider.WeightedSynonym;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute;
@@ -37,15 +38,15 @@ import org.apache.lucene.search.BoostAttribute;
 public final class Word2VecSynonymFilter extends TokenFilter {
 
   private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
-  private final PositionIncrementAttribute posIncrAtt =
+  private final PositionIncrementAttribute posIncrementAtt =
       addAttribute(PositionIncrementAttribute.class);
   private final PositionLengthAttribute posLenAtt = addAttribute(PositionLengthAttribute.class);
   private final BoostAttribute boostAtt = addAttribute(BoostAttribute.class);
   private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
 
   private final SynonymProvider synonymProvider;
-  private final int maxResult;
-  private final float accuracy;
+  private final int maxSynonymsPerTerm;
+  private final float minAcceptedSimilarity;
   private final LinkedList<WeightedSynonym> outputBuffer = new LinkedList<>();
   private State lastState = null;
 
@@ -54,16 +55,19 @@ public final class Word2VecSynonymFilter extends TokenFilter {
    *
    * @param input input tokenstream
    * @param synonymProvider synonym provider
-   * @param maxResult maximum number of result returned by the synonym search
-   * @param accuracy minimal value of cosign similarity between the searched vector and the
-   *     retrieved ones
+   * @param maxSynonymsPerTerm maximum number of result returned by the synonym search
+   * @param minAcceptedSimilarity minimal value of cosine similarity between the searched vector and
+   *     the retrieved ones
    */
   public Word2VecSynonymFilter(
-      TokenStream input, SynonymProvider synonymProvider, int maxResult, float accuracy) {
+      TokenStream input,
+      SynonymProvider synonymProvider,
+      int maxSynonymsPerTerm,
+      float minAcceptedSimilarity) {
     super(input);
     this.synonymProvider = synonymProvider;
-    this.maxResult = maxResult;
-    this.accuracy = accuracy;
+    this.maxSynonymsPerTerm = maxSynonymsPerTerm;
+    this.minAcceptedSimilarity = minAcceptedSimilarity;
   }
 
   @Override
@@ -77,7 +81,8 @@ public final class Word2VecSynonymFilter extends TokenFilter {
 
     if (input.incrementToken()) {
       String term = new String(termAtt.buffer(), 0, termAtt.length());
-      List<WeightedSynonym> synonyms = this.synonymProvider.getSynonyms(term, maxResult, accuracy);
+      List<WeightedSynonym> synonyms =
+          this.synonymProvider.getSynonyms(term, maxSynonymsPerTerm, minAcceptedSimilarity);
       if (synonyms.size() > 0) {
         this.lastState = captureState();
         this.outputBuffer.addAll(synonyms);
@@ -98,7 +103,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
     boostAtt.setBoost(synonym.getWeight());
     typeAtt.setType(SynonymGraphFilter.TYPE_SYNONYM);
     posLenAtt.setPositionLength(1);
-    posIncrAtt.setPositionIncrement(0);
+    posIncrementAtt.setPositionIncrement(0);
   }
 
   @Override
