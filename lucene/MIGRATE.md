@@ -19,6 +19,11 @@
 
 ## Migration from Lucene 9.x to Lucene 10.0
 
+### PersianStemFilter is added to PersianAnalyzer (LUCENE-10312)
+
+PersianAnalyzer now includes PersianStemFilter, that would change analysis results. If you need the exactly same analysis
+behaviour as 9.x, clone `PersianAnalyzer` in 9.x or create custom analyzer by using `CustomAnalyzer` on your own. 
+
 ### AutomatonQuery/CompiledAutomaton/RunAutomaton/RegExp no longer determinize (LUCENE-10010)
 
 These classes no longer take a `determinizeWorkLimit` and no longer determinize
@@ -34,6 +39,21 @@ with the new one during object instantiation.
 
 Except for a few exceptions, almost all normalizer and stemmer classes are now package private. If your code depends on
 constants defined in them, copy the constant values and re-define them in your code.
+
+### LongRangeFacetCounts / DoubleRangeFacetCounts #getTopChildren behavior change (LUCENE-10614)
+
+The behavior of `LongRangeFacetCounts`/`DoubleRangeFacetCounts` `#getTopChildren` actually returns
+the top-n ranges ordered by count from 10.0 onwards (as described in the `Facets` API) instead
+of returning all ranges ordered by constructor-specified range order. The pre-existing behavior in 
+9.x and earlier can be retained by migrating to the new `Facets#getAllChildren` API (LUCENE-10550).
+
+### SortedSetDocValues#NO_MORE_ORDS removed (LUCENE-10603)
+
+`SortedSetDocValues#nextOrd()` no longer returns `NO_MORE_ORDS` when ordinals are exhausted for the
+currently-positioned document. Callers should instead use `SortedSetDocValues#docValueCount()` to
+determine the number of valid ordinals for the currently-positioned document up-front. It is now
+illegal to call `SortedSetDocValues#nextOrd()` more than `SortedSetDocValues#docValueCount()` times
+for the currently-positioned document (doing so will result in undefined behavior).
 
 ## Migration from Lucene 9.0 to Lucene 9.1
 
