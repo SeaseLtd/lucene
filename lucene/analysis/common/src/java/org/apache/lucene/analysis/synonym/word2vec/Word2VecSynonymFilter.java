@@ -47,7 +47,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   private final SynonymProvider synonymProvider;
   private final int maxSynonymsPerTerm;
   private final float minAcceptedSimilarity;
-  private final LinkedList<WeightedSynonym> outputBuffer = new LinkedList<>();
+  private final LinkedList<WeightedSynonym> synonymBuffer = new LinkedList<>();
   private State lastState = null;
 
   /**
@@ -73,7 +73,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   @Override
   public boolean incrementToken() throws IOException {
 
-    if (!outputBuffer.isEmpty()) {
+    if (!synonymBuffer.isEmpty()) {
       // We still have pending outputs from a prior synonym match:
       releaseBufferedToken();
       return true;
@@ -84,8 +84,10 @@ public final class Word2VecSynonymFilter extends TokenFilter {
       List<WeightedSynonym> synonyms =
           this.synonymProvider.getSynonyms(term, maxSynonymsPerTerm, minAcceptedSimilarity);
       if (synonyms.size() > 0) {
+        // The synonyms list does not contain the original term so, the first time it returns the original term
+        // and store the other synonyms in a buffer. These synonyms will be returned in a future call
         this.lastState = captureState();
-        this.outputBuffer.addAll(synonyms);
+        this.synonymBuffer.addAll(synonyms);
       }
       return true;
     }
@@ -93,9 +95,9 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   }
 
   private void releaseBufferedToken() {
-    assert outputBuffer.size() > 0;
+    assert synonymBuffer.size() > 0;
 
-    WeightedSynonym synonym = outputBuffer.pollFirst();
+    WeightedSynonym synonym = synonymBuffer.pollFirst();
     clearAttributes();
     restoreState(this.lastState);
     termAtt.setEmpty();
@@ -109,6 +111,6 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   @Override
   public void reset() throws IOException {
     super.reset();
-    outputBuffer.clear();
+    synonymBuffer.clear();
   }
 }
