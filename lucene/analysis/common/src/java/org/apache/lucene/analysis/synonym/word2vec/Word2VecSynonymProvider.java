@@ -17,8 +17,8 @@
 
 package org.apache.lucene.analysis.synonym.word2vec;
 
-import static org.apache.lucene.codecs.lucene92.Lucene92HnswVectorsFormat.DEFAULT_BEAM_WIDTH;
-import static org.apache.lucene.codecs.lucene92.Lucene92HnswVectorsFormat.DEFAULT_MAX_CONN;
+import static org.apache.lucene.codecs.lucene94.Lucene94HnswVectorsFormat.DEFAULT_BEAM_WIDTH;
+import static org.apache.lucene.codecs.lucene94.Lucene94HnswVectorsFormat.DEFAULT_MAX_CONN;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.lucene.index.RandomAccessVectorValues;
-import org.apache.lucene.index.RandomAccessVectorValuesProducer;
+import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.index.VectorValues;
 import org.apache.lucene.util.BytesRef;
@@ -43,10 +43,12 @@ import org.apache.lucene.util.hnsw.NeighborQueue;
  */
 public class Word2VecSynonymProvider implements SynonymProvider {
 
-  public static final VectorSimilarityFunction similarityFunction = VectorSimilarityFunction.COSINE;
-  public static final long SEED = System.currentTimeMillis();
+  private static final VectorSimilarityFunction SIMILARITY_FUNCTION =
+      VectorSimilarityFunction.COSINE;
+  private static final VectorEncoding VECTOR_ENCODING = VectorEncoding.FLOAT32;
+  private static final long SEED = System.currentTimeMillis();
 
-  private final VectorProducer vectorProducer;
+  private final SynonymVector synonymVector;
   private final HnswGraph hnswGraph;
 
   /**
@@ -61,11 +63,16 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     }
 
     // Create the provider which will feed the vectors for the graph
-    vectorProducer = new VectorProducer(vectorStream);
-    HnswGraphBuilder builder =
-        new HnswGraphBuilder(
-            vectorProducer, similarityFunction, DEFAULT_MAX_CONN, DEFAULT_BEAM_WIDTH, SEED);
-    this.hnswGraph = builder.build(vectorProducer.randomAccess());
+    synonymVector = new SynonymVector(vectorStream);
+    HnswGraphBuilder<?> builder =
+        HnswGraphBuilder.create(
+            synonymVector,
+            VECTOR_ENCODING,
+            SIMILARITY_FUNCTION,
+            DEFAULT_MAX_CONN,
+            DEFAULT_BEAM_WIDTH,
+            SEED);
+    this.hnswGraph = builder.build(synonymVector.copy());
   }
 
   @Override
@@ -76,8 +83,6 @@ public class Word2VecSynonymProvider implements SynonymProvider {
       throw new IllegalArgumentException("Term must not be null");
     }
 
-    SynonymVector synonymVector = (SynonymVector) vectorProducer.randomAccess();
-
     LinkedList<WeightedSynonym> result = new LinkedList<>();
     float[] query = synonymVector.vectorValue(token);
     if (query != null) {
@@ -86,7 +91,8 @@ public class Word2VecSynonymProvider implements SynonymProvider {
               query,
               maxSynonymsPerTerm,
               synonymVector,
-              similarityFunction,
+              VECTOR_ENCODING,
+              SIMILARITY_FUNCTION,
               hnswGraph,
               null,
               Integer.MAX_VALUE);
@@ -104,14 +110,16 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     return result;
   }
 
-  static class VectorProducer implements RandomAccessVectorValuesProducer {
+  static class SynonymVector extends VectorValues implements RandomAccessVectorValues {
 
     private final int dictionarySize;
     private final int vectorDimension;
     private final Word2VecSynonymTerm[] data;
     private final Map<String, Word2VecSynonymTerm> word2Vec;
 
-    public VectorProducer(Word2VecModelStream vectorStream) {
+    private int currentIndex = -1;
+
+    public SynonymVector(Word2VecModelStream vectorStream) {
       this.dictionarySize = vectorStream.getDictionarySize();
       this.vectorDimension = vectorStream.getVectorDimension();
       this.data = new Word2VecSynonymTerm[dictionarySize];
@@ -122,6 +130,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
           .getModelStream()
           .forEach(
               synTerm -> {
+                // TODO implement performance test to verify if this check slows down the process
                 if (this.vectorDimension != synTerm.getVector().length) {
                   throw new IllegalArgumentException(
                       "Word2Vec model file corrupted. Declared vectors of size "
@@ -145,30 +154,15 @@ public class Word2VecSynonymProvider implements SynonymProvider {
       }
     }
 
-    @Override
-    public RandomAccessVectorValues randomAccess() {
-      return new SynonymVector(data, word2Vec, dictionarySize, vectorDimension);
-    }
-  }
-
-  static class SynonymVector extends VectorValues implements RandomAccessVectorValues {
-
-    private final int dictionarySize;
-    private final int vectorDimension;
-    private final Word2VecSynonymTerm[] data;
-    private final Map<String, Word2VecSynonymTerm> word2VecMap;
-
-    private int currentIndex = -1;
-
-    SynonymVector(
-        Word2VecSynonymTerm[] data,
-        Map<String, Word2VecSynonymTerm> word2VecMap,
+    private SynonymVector(
         int dictionarySize,
-        int vectorDimension) {
+        int vectorDimension,
+        Word2VecSynonymTerm[] data,
+        Map<String, Word2VecSynonymTerm> word2Vec) {
       this.dictionarySize = dictionarySize;
       this.vectorDimension = vectorDimension;
       this.data = data;
-      this.word2VecMap = word2VecMap;
+      this.word2Vec = word2Vec;
     }
 
     @Override
@@ -181,7 +175,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     }
 
     public float[] vectorValue(String word) {
-      Word2VecSynonymTerm term = word2VecMap.get(word);
+      Word2VecSynonymTerm term = word2Vec.get(word);
       return (term == null) ? null : term.getVector();
     }
 
@@ -228,6 +222,11 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     @Override
     public long cost() {
       return dictionarySize;
+    }
+
+    @Override
+    public RandomAccessVectorValues copy() throws IOException {
+      return new SynonymVector(this.dictionarySize, this.vectorDimension, this.data, this.word2Vec);
     }
   }
 }
