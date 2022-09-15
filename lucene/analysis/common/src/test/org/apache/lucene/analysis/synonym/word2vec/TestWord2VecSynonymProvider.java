@@ -27,7 +27,7 @@ import org.junit.Test;
 public class TestWord2VecSynonymProvider extends LuceneTestCase {
 
   private static final int MAX_SYNONYMS_PER_TERM = 10;
-  private static final float MIN_ACCEPTED_SIMILARITY = 0.7f;
+  private static final float MIN_ACCEPTED_SIMILARITY = 0.85f;
 
   private final Word2VecSynonymProvider unit;
 
@@ -130,10 +130,8 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
             new Word2VecSynonymTerm("c", new float[] {9, 10}),
             new Word2VecSynonymTerm("f", new float[] {-1, 10}));
 
-    Word2VecSynonymProvider.VectorProducer unit =
-        new Word2VecSynonymProvider.VectorProducer(toStream(word2VecModel));
     Word2VecSynonymProvider.SynonymVector vector =
-        (Word2VecSynonymProvider.SynonymVector) unit.randomAccess();
+        new Word2VecSynonymProvider.SynonymVector(toStream(word2VecModel));
     float[] vectorIdA = vector.vectorValue(0);
     float[] vectorIdF = vector.vectorValue(3);
     assertArrayEquals(new float[] {10, 10}, vectorIdA, 0.001f);
@@ -151,7 +149,7 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
 
     expectThrows(
         IllegalArgumentException.class,
-        () -> new Word2VecSynonymProvider.VectorProducer(toStream(word2VecModel)));
+        () -> new Word2VecSynonymProvider.SynonymVector(toStream(word2VecModel)));
   }
 
   private Word2VecModelStream toStream(List<Word2VecSynonymTerm> list) {
