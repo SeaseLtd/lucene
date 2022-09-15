@@ -84,8 +84,10 @@ public final class Word2VecSynonymFilter extends TokenFilter {
       List<WeightedSynonym> synonyms =
           this.synonymProvider.getSynonyms(term, maxSynonymsPerTerm, minAcceptedSimilarity);
       if (synonyms.size() > 0) {
-        // The synonyms list does not contain the original term so, the first time it returns the original term
-        // and store the other synonyms in a buffer. These synonyms will be returned in a future call
+        // The synonyms list does not contain the original term so, the first time it returns the
+        // original term
+        // and store the other synonyms in a buffer. These synonyms will be returned in a future
+        // call
         this.lastState = captureState();
         this.synonymBuffer.addAll(synonyms);
       }
