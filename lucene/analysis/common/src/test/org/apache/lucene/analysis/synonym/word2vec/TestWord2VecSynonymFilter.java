@@ -56,7 +56,7 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
         VectorSimilarityFunction.COSINE.compare(
             inputTerm.getVector(), word2VecModel.get(4).getVector());
 
-    Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
+    Analyzer a = getAnalyzer(SynonymProvider, 10, 0.9f);
     assertAnalyzesTo(
         a,
         "pre a post", // input
@@ -106,7 +106,7 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
         VectorSimilarityFunction.COSINE.compare(
             secondInputTerm.getVector(), word2VecModel.get(7).getVector());
 
-    Analyzer a = getAnalyzer(SynonymProvider, 10, 0.8f);
+    Analyzer a = getAnalyzer(SynonymProvider, 10, 0.9f);
     assertAnalyzesTo(
         a,
         "pre a post", // input
