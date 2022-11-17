@@ -31,12 +31,16 @@ API Changes
 
 * LUCENE-10603: Remove SortedSetDocValues#NO_MORE_ORDS definition. (Greg Miller)
 
+* GITHUB#11813: Remove Operations.isFinite: the recursive implementation could be problematic
+  for large automatons (WildcardQuery, PrefixQuery, RegExpQuery, etc).  (taroplus, Robert Muir)
+
+* GITHUB#11840: Query rewrite now takes an IndexSearcher instead of IndexReader to enable concurrent
+  rewriting. (Patrick Zhai)
+
 New Features
 ---------------------
 
 * LUCENE-10010 Introduce NFARunAutomaton to run NFA directly. (Patrick Zhai)
-
-* LUCENE-10151 Enable timeout support in IndexSearcher. (Deepika Sharma)
 
 * LUCENE-10626 Hunspell: add tools to aid dictionary editing:
   analysis introspection, stem expansion and stem/flag suggestion (Peter Gromov)
@@ -47,16 +51,14 @@ Improvements
 * LUCENE-10416: Update Korean Dictionary to mecab-ko-dic-2.1.1-20180720 for Nori.
   (Uihyun Kim)
 
-* LUCENE-10216: Use MergePolicy to define and MergeScheduler to trigger the reader merges
-  required by addIndexes(CodecReader[]) API. (Vigya Sharma, Michael McCandless)
-
 * LUCENE-10614: Properly support getTopChildren in RangeFacetCounts. (Yuting Gan)
 
 * LUCENE-10652: Add a top-n range faceting example to RangeFacetsExample. (Yuting Gan)
 
 Optimizations
 ---------------------
-(No changes)
+
+* GITHUB#11857, GITHUB#11859, GITHUB#11893, GITHUB#11909: Hunspell: improved suggestion performance
 
 Bug Fixes
 ---------------------
@@ -66,6 +68,9 @@ Bug Fixes
 
 Other
 ---------------------
+
+* LUCENE-10376: Roll up the loop in VInt/VLong in DataInput. (Guo Feng)
+
 * LUCENE-10283: The minimum required Java version was bumped from 11 to 17.
   (Adrien Grand, Uwe Schindler, Dawid Weiss, Robert Muir)
 
@@ -90,18 +95,129 @@ API Changes
 * GITHUB#11742: MatchingFacetSetsCounts#getTopChildren now properly returns "top" children instead
   of all children. (Greg Miller)
 
+* GITHUB#11772: Removed native subproject and WindowsDirectory implementation from lucene.misc. Recommendation:
+  use MMapDirectory implementation on Windows. (Robert Muir, Uwe Schindler, Dawid Weiss)
+
+* GITHUB#11804: FacetsCollector#collect is no longer final, allowing extension. (Greg Miller)
+
+* GITHUB#11761: TieredMergePolicy now allowed a maximum allowable deletes percentage of down to 5%, and the default
+  maximum allowable deletes percentage is changed from 33% to 20%. (Marc D'Mello)
+
+* GITHUB#11822: Configure replicator PrimaryNode replia shutdown timeout. (Steven Schlansker)
+
+* GITHUB#11930: Added IOContext#LOAD for files that are a small fraction of the
+  total index size and heavily accessed with a random access pattern. Some
+  Directory implementations may choose to load files that use this IOContext in
+  memory to provide stronger guarantees on query latency.
+  (Adrien Grand, Uwe Schindler)
+
+New Features
+---------------------
+* GITHUB#11795: Add ByteWritesTrackingDirectoryWrapper to expose metrics for bytes merged, flushed, and overall
+  write amplification factor. (Marc D'Mello)
+
+* GITHUB#11929: MMapDirectory gives more granular control on which files to
+  preload. (Adrien Grand, Uwe Schindler)
+
+Improvements
+---------------------
+* GITHUB#11778: Detailed part-of-speech information for particle(조사) and ending(어미) on Nori
+  is now tagged. (Namgyu Kim)
+
+* GITHUB#11785: Improve Tessellator performance by delaying calls to the method
+  #isIntersectingPolygon (Ignacio Vera)
+
+* GITHUB#687: speed up IndexSortSortedNumericDocValuesRangeQuery#BoundedDocIdSetIterator
+  construction using bkd binary search. (Jianping Weng)
+
 Bug Fixes
 ---------------------
 * GITHUB#11726: Indexing term vectors on large documents could fail due to
   trying to apply a dictionary whose size is greater than the maximum supported
   window size for LZ4. (Adrien Grand)
 
-* LUCENE-10674: Ensure BitSetConjDISI returns NO_MORE_DOCS when sub-iterator exhausts. (Jack Mazanec)
+* GITHUB#11768: Taxonomy and SSDV faceting now correctly breaks ties by preferring smaller ordinal
+  values. (Greg Miller)
+
+* GITHUB#11807: Don't rewrite queries in unified highlighter. (Alan Woodward)
+
+* GITHUB#11907: Fix latent casting bugs in BKDWriter. (Ben Trent)
+
+Optimizations
+---------------------
+* GITHUB#11738: Optimize MultiTermQueryConstantScoreWrapper when a term is present that matches all
+  docs in a segment. (Greg Miller)
+
+* GITHUB#11735: KeywordRepeatFilter + OpenNLPLemmatizer always drops last token of a stream.
+  (Luke Kot-Zaniewski)
+
+* GITHUB#11771: KeywordRepeatFilter + OpenNLPLemmatizer sometimes arbitrarily exits token stream.
+  (Luke Kot-Zaniewski)
+
+* GITHUB#11803: DrillSidewaysScorer has improved to leverage "advance" instead of "next" where
+  possible, and splits out first and second phase checks to delay match confirmation. (Greg Miller)
+
+* GITHUB#11828: Tweak TermInSetQuery "dense" optimization to only require all terms present in a
+  given field to match a term (rather than all docs in a segment). This is consistent with
+  MultiTermQueryConstantScoreWrapper. (Greg Miller)
+
+* GITHUB#11876: Use ByteArrayComparator to speed up PointInSetQuery in single dimension case.
+  (Guo Feng)
+
+* GITHUB#11881: Further optimize drill-sideways scoring by specializing the single dimension case
+  and borrowing some concepts from "min should match" scoring. (Greg Miller)
+
+* GITHUB#11884: Simplify the logic of matchAll() in IndexSortSortedNumericDocValuesRangeQuery. (Lu Xugang)
+
+* GITHUB#11895: count() in BooleanQuery could be early quit. (Lu Xugang)
 
 Other
 ---------------------
+
+* GITHUB#11856: Fix nanos to millis conversion for tests (Marios Trivyzas)
+
 * LUCENE-10423: Remove usages of System.currentTimeMillis() from tests. (Marios Trivyzas)
 
+* GITHUB#11811: Upgrade google java format to 1.15.0 (Dawid Weiss)
+
+* GITHUB#11834: Upgrade forbiddenapis to version 3.4.  (Uwe Schindler)
+
+* LUCENE-10635: Ensure test coverage for WANDScorer by using a test query. (Zach Chen, Adrien Grand)
+
+* GITHUB#11752: Added interface to relate a LatLonShape with another shape represented as Component2D. (Navneet Verma)
+
+Build
+---------------------
+
+* GITHUB#11886: Upgrade to gradle 7.5.1 (Dawid Weiss)
+
+======================== Lucene 9.4.2 =======================
+
+Bug Fixes
+---------------------
+* GITHUB#11905: Fix integer overflow when seeking the vector index for connections in a single segment.
+ This addresses a bug that was introduced in 9.2.0 where having many vectors is not handled well
+ in the vector connections reader.
+
+* GITHUB#11939: Fix incorrect cost calculation in DocIdSetBuilder after upgradeToBitSet when doc list is growing.
+  This addresses a bug where the cost of TermRangeQuery/TermInSetQuery and some other queries will be highly underestimated.
+
+Improvements
+---------------------
+* GITHUB#11912, GITHUB#11918: Port generic exception handling from MemorySegmentIndexInput
+  to ByteBufferIndexInput. This also adds the invalid position while seeking or reading
+  to the exception message. Allows better debugging and analysis of bugs like GITHUB#11905.
+  (Uwe Schindler, Robert Muir)
+
+* GITHUB#11916: improve checkindex to be more thorough for vectors. (Ben Trent)
+
+======================== Lucene 9.4.1 =======================
+
+Bug Fixes
+---------------------
+* GITHUB#11858: Fix kNN vectors format validation on large segments. This
+ addresses a regression in 9.4.0 where validation could fail, preventing
+ further writes or searches on the index. (Julie Tibshirani)
 
 ======================== Lucene 9.4.0 =======================
 
@@ -116,8 +232,17 @@ New Features
 * LUCENE-10629: Support match set filtering with a query in MatchingFacetSetCounts. (Stefan Vodita, Shai Erera)
 
 * LUCENE-10633: SortField#setOptimizeSortWithIndexedData and
-  SortField#getOptimizeSortWithIndexedData were introduce to provide
+  SortField#getOptimizeSortWithIndexedData were introduced to provide
   an option to disable sort optimization for various sort fields. (Mayya Sharipova)
+
+* GITHUB#912: Support for Java 19 foreign memory support was added. Applications started
+  with command line parameter "java --enable-preview" will automatically use the new
+  foreign memory API of Java 19 to access indexes on disk with MMapDirectory. This is
+  an opt-in feature and requires explicit Java command line flag! When enabled, Lucene logs
+  a notice using java.util.logging. Please test thoroughly and report bugs/slowness to Lucene's
+  mailing list. When the new API is used, MMapDirectory will mmap Lucene indexes in chunks of
+  16 GiB (instead of 1 GiB) and indexes closed while queries are running can no longer crash
+  the JVM.  (Uwe Schindler)
 
 Improvements
 ---------------------
@@ -125,6 +250,9 @@ Improvements
 
 * LUCENE-10207: TermInSetQuery can now provide a ScoreSupplier with cost estimation, making it
   usable in IndexOrDocValuesQuery. (Greg Miller)
+
+* LUCENE-10216: Use MergePolicy to define and MergeScheduler to trigger the reader merges
+  required by addIndexes(CodecReader[]) API. (Vigya Sharma, Michael McCandless)
 
 * GITHUB#11715: Add Integer awareness to RamUsageEstimator.sizeOf (Mike Drob)
 
@@ -158,6 +286,10 @@ Bug Fixes
 * LUCENE-10665, GITHUB#11701: Fix classloading deadlock in analysis factories / AnalysisSPILoader
   initialization.  (Uwe Schindler)
 
+* LUCENE-10674: Ensure BitSetConjDISI returns NO_MORE_DOCS when sub-iterator exhausts. (Jack Mazanec)
+
+* GITHUB#11794: Guard FieldExistsQuery against null pointers (Luca Cavanna)
+
 Build
 ---------------------
 
@@ -187,6 +319,8 @@ New Features
 
 * LUCENE-10274: Added facetsets module for high dimensional (hyper-rectangle) faceting
 (Shai Erera, Marc D'Mello, Greg Miller)
+
+* LUCENE-10151 Enable timeout support in IndexSearcher. (Deepika Sharma)
 
 Improvements
 ---------------------
@@ -248,13 +382,13 @@ Bug Fixes
 
 * LUCENE-10582: Fix merging of overridden CollectionStatistics in CombinedFieldQuery (Yannick Welsch)
 
-* LUCENE-10598: SortedSetDocValues#docValueCount() should be always greater than zero. (Lu Xugang)
-
 * LUCENE-10563: Fix failure to tessellate complex polygon (Craig Taverner)
 
 * LUCENE-10605: Fix error in 32bit jvm object alignment gap calculation (Sun Wuqiang)
 
 * GITHUB#956: Make sure KnnVectorQuery applies search boost. (Julie Tibshirani)
+
+* LUCENE-10598: SortedSetDocValues#docValueCount() should be always greater than zero. (Lu Xugang)
 
 * LUCENE-10600: SortedSetDocValues#docValueCount should be an int, not long (Lu Xugang)
 

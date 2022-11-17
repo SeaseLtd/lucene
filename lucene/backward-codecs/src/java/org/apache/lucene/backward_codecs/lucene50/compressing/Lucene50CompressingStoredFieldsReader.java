@@ -262,7 +262,9 @@ public final class Lucene50CompressingStoredFieldsReader extends StoredFieldsRea
     }
   }
 
-  /** @throws AlreadyClosedException if this FieldsReader is closed */
+  /**
+   * @throws AlreadyClosedException if this FieldsReader is closed
+   */
   private void ensureOpen() throws AlreadyClosedException {
     if (closed) {
       throw new AlreadyClosedException("this FieldsReader is closed");
@@ -535,7 +537,7 @@ public final class Lucene50CompressingStoredFieldsReader extends StoredFieldsRea
         if (bitsPerLength == 0) {
           final int length = fieldsStream.readVInt();
           for (int i = 0; i < chunkDocs; ++i) {
-            offsets[1 + i] = (1 + i) * length;
+            offsets[1 + i] = (1 + i) * (long) length;
           }
         } else if (bitsPerStoredFields > 31) {
           throw new CorruptIndexException("bitsPerLength=" + bitsPerLength, fieldsStream);
