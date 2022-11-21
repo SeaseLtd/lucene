@@ -178,6 +178,32 @@ public class XYZBounds implements Bounds {
 
   // Modification methods
 
+  /**
+   * Add a fully-formed XYZBounds to the current one.
+   *
+   * @param bounds is the bounds object to modify
+   */
+  public void addBounds(final XYZBounds bounds) {
+    if (bounds.maxX == null || maxX > bounds.maxX) {
+      bounds.maxX = maxX;
+    }
+    if (bounds.minX == null || minX < bounds.minX) {
+      bounds.minX = minX;
+    }
+    if (bounds.maxY == null || maxY > bounds.maxY) {
+      bounds.maxY = maxY;
+    }
+    if (bounds.minY == null || minY < bounds.minY) {
+      bounds.minY = minY;
+    }
+    if (bounds.maxZ == null || maxZ > bounds.maxZ) {
+      bounds.maxZ = maxZ;
+    }
+    if (bounds.minZ == null || minZ < bounds.minZ) {
+      bounds.minZ = minZ;
+    }
+  }
+
   @Override
   public Bounds addPlane(
       final PlanetModel planetModel, final Plane plane, final Membership... bounds) {
@@ -340,6 +366,39 @@ public class XYZBounds implements Bounds {
     minZ = planetModel.getMinimumZValue();
     maxZ = planetModel.getMaximumZValue();
     return this;
+  }
+
+  /**
+   * Courtesy method to see if a point is within the bounds.
+   *
+   * @param v is the point/vector we want to check
+   * @return true if the bounds contains the vector
+   */
+  public boolean isWithin(final Vector v) {
+    return isWithin(v.x, v.y, v.z);
+  }
+
+  /**
+   * Courtesy method to see if a point is within the bounds.
+   *
+   * @param x is the x coordinate
+   * @param y is the y coordinate
+   * @param z is the z coordinate
+   * @return true if the bounds contains the vector
+   */
+  public boolean isWithin(final double x, final double y, final double z) {
+    return (minX != null
+        && x >= minX
+        && maxX != null
+        && x <= maxX
+        && minY != null
+        && y >= minY
+        && maxY != null
+        && y <= maxY
+        && minZ != null
+        && z >= minZ
+        && maxZ != null
+        && z <= maxZ);
   }
 
   @Override

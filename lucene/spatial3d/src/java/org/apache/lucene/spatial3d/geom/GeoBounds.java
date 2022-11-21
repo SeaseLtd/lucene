@@ -14,32 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.lucene.store;
+package org.apache.lucene.spatial3d.geom;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.OutputStream;
-
-/** A {@link DataOutput} wrapping a plain {@link OutputStream}. */
-public class OutputStreamDataOutput extends DataOutput implements Closeable {
-  private final OutputStream os;
-
-  public OutputStreamDataOutput(OutputStream os) {
-    this.os = os;
-  }
-
-  @Override
-  public void writeByte(byte b) throws IOException {
-    os.write(b);
-  }
-
-  @Override
-  public void writeBytes(byte[] b, int offset, int length) throws IOException {
-    os.write(b, offset, length);
-  }
-
-  @Override
-  public void close() throws IOException {
-    os.close();
-  }
-}
+/**
+ * Generic shape that supports bounds. This describes methods that help shapes compute their bounds.
+ *
+ * @lucene.experimental
+ */
+public interface GeoBounds extends Bounded, Membership, PlanetObject {}
