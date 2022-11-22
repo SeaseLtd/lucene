@@ -132,10 +132,10 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
 
     Word2VecSynonymProvider.SynonymVector vector =
         new Word2VecSynonymProvider.SynonymVector(toStream(word2VecModel));
-    float[] vectorIdA = vector.vectorValue(0);
-    float[] vectorIdF = vector.vectorValue(3);
-    assertArrayEquals(new float[] {10, 10}, vectorIdA, 0.001f);
-    assertArrayEquals(new float[] {-1, 10}, vectorIdF, 0.001f);
+    float[] vectorIdA = vector.vectorValue("a");
+    float[] vectorIdF = vector.vectorValue("f");
+    assertArrayEquals(new float[] {0.70710f, 0.70710f}, vectorIdA, 0.001f);
+    assertArrayEquals(new float[] {-0.0995f, 0.99503f}, vectorIdF, 0.001f);
   }
 
   @Test
@@ -150,6 +150,19 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
     expectThrows(
         IllegalArgumentException.class,
         () -> new Word2VecSynonymProvider.SynonymVector(toStream(word2VecModel)));
+  }
+
+  @Test
+  public void normalizedVector_shouldReturnLength1() throws Exception {
+    Word2VecSynonymTerm synonymTerm = new Word2VecSynonymTerm("a", new float[] {10, 10});
+    synonymTerm.normalizeVector();
+    float[] vector = synonymTerm.getVector();
+    float len = 0;
+    for (int i = 0; i < vector.length; i++) {
+      len += vector[i] * vector[i];
+      System.out.println(vector[i]);
+    }
+    assertEquals(1, Math.sqrt(len), 0.0001f);
   }
 
   private Word2VecModelStream toStream(List<Word2VecSynonymTerm> list) {

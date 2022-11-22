@@ -44,7 +44,7 @@ import org.apache.lucene.util.hnsw.NeighborQueue;
 public class Word2VecSynonymProvider implements SynonymProvider {
 
   private static final VectorSimilarityFunction SIMILARITY_FUNCTION =
-      VectorSimilarityFunction.COSINE;
+      VectorSimilarityFunction.DOT_PRODUCT;
   private static final VectorEncoding VECTOR_ENCODING = VectorEncoding.FLOAT32;
   private static final long SEED = System.currentTimeMillis();
 
@@ -128,10 +128,12 @@ public class Word2VecSynonymProvider implements SynonymProvider {
       AtomicInteger loaded = new AtomicInteger(0);
       vectorStream
           .getModelStream()
+          .parallel()
           .forEach(
               synTerm -> {
+                float[] vector = synTerm.getVector();
                 // TODO implement performance test to verify if this check slows down the process
-                if (this.vectorDimension != synTerm.getVector().length) {
+                if (this.vectorDimension != vector.length) {
                   throw new IllegalArgumentException(
                       "Word2Vec model file corrupted. Declared vectors of size "
                           + this.vectorDimension
@@ -141,6 +143,9 @@ public class Word2VecSynonymProvider implements SynonymProvider {
                           + loaded.get()
                           + 2); // +2 because the first line of the model file is the header
                 }
+                // normalize vector so, in the future, we can use the dot_product instead of the
+                // cosine similarity function
+                synTerm.normalizeVector();
                 this.data[loaded.getAndIncrement()] = synTerm;
                 this.word2Vec.put(synTerm.getWord(), synTerm);
               });
