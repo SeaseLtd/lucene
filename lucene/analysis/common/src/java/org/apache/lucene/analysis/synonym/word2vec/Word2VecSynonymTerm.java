@@ -46,6 +46,17 @@ public class Word2VecSynonymTerm {
     return vector.length;
   }
 
+  public void normalizeVector() {
+    float vectorLength = 0;
+    for (int i = 0; i < vector.length; i++) {
+      vectorLength += vector[i] * vector[i];
+    }
+    vectorLength = (float) Math.sqrt(vectorLength);
+    for (int i = 0; i < vector.length; i++) {
+      vector[i] /= vectorLength;
+    }
+  }
+
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder(this.word);
