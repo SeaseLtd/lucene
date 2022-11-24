@@ -17,8 +17,8 @@
 
 package org.apache.lucene.analysis.synonym.word2vec;
 
-import static org.apache.lucene.codecs.lucene94.Lucene94HnswVectorsFormat.DEFAULT_BEAM_WIDTH;
-import static org.apache.lucene.codecs.lucene94.Lucene94HnswVectorsFormat.DEFAULT_MAX_CONN;
+import static org.apache.lucene.util.hnsw.HnswGraphBuilder.DEFAULT_BEAM_WIDTH;
+import static org.apache.lucene.util.hnsw.HnswGraphBuilder.DEFAULT_MAX_CONN;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -222,11 +222,6 @@ public class Word2VecSynonymProvider implements SynonymProvider {
         currentIndex = NO_MORE_DOCS;
       }
       return currentIndex;
-    }
-
-    @Override
-    public long cost() {
-      return dictionarySize;
     }
 
     @Override
