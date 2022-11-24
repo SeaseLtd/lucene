@@ -18,6 +18,7 @@
 package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.util.Locale;
+import org.apache.lucene.util.CharsRef;
 
 /**
  * Word2Vec unit composed by a term with the associated vector
@@ -26,15 +27,15 @@ import java.util.Locale;
  */
 public class Word2VecSynonymTerm {
 
-  private final String word;
+  private final CharsRef word;
   private final float[] vector;
 
-  public Word2VecSynonymTerm(String word, float[] vector) {
+  public Word2VecSynonymTerm(CharsRef word, float[] vector) {
     this.word = word;
     this.vector = vector;
   }
 
-  public String getWord() {
+  public CharsRef getWord() {
     return this.word;
   }
 

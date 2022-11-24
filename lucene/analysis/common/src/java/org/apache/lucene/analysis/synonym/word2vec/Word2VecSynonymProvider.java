@@ -31,6 +31,7 @@ import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.index.VectorValues;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.CharsRef;
 import org.apache.lucene.util.hnsw.HnswGraph;
 import org.apache.lucene.util.hnsw.HnswGraphBuilder;
 import org.apache.lucene.util.hnsw.HnswGraphSearcher;
@@ -77,7 +78,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
   @Override
   public List<WeightedSynonym> getSynonyms(
-      String token, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException {
+      CharsRef token, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException {
 
     if (token == null) {
       throw new IllegalArgumentException("Term must not be null");
@@ -115,7 +116,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     private final int dictionarySize;
     private final int vectorDimension;
     private final Word2VecSynonymTerm[] data;
-    private final Map<String, Word2VecSynonymTerm> word2Vec;
+    private final Map<CharsRef, Word2VecSynonymTerm> word2Vec;
 
     private int currentIndex = -1;
 
@@ -163,7 +164,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
         int dictionarySize,
         int vectorDimension,
         Word2VecSynonymTerm[] data,
-        Map<String, Word2VecSynonymTerm> word2Vec) {
+        Map<CharsRef, Word2VecSynonymTerm> word2Vec) {
       this.dictionarySize = dictionarySize;
       this.vectorDimension = vectorDimension;
       this.data = data;
@@ -179,7 +180,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
       return data[ord];
     }
 
-    public float[] vectorValue(String word) {
+    public float[] vectorValue(CharsRef word) {
       Word2VecSynonymTerm term = word2Vec.get(word);
       return (term == null) ? null : term.getVector();
     }

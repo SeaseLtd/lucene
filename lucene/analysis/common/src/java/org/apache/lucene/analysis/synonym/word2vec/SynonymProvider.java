@@ -19,6 +19,7 @@ package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.io.IOException;
 import java.util.List;
+import org.apache.lucene.util.CharsRef;
 
 /**
  * Generic synonym provider
@@ -36,7 +37,7 @@ public interface SynonymProvider {
    *     the retrieved ones
    */
   List<WeightedSynonym> getSynonyms(
-      String term, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException;
+      CharsRef term, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException;
 
   /**
    * Term with the associated weight
@@ -44,15 +45,15 @@ public interface SynonymProvider {
    * @lucene.experimental
    */
   class WeightedSynonym {
-    private final String term;
+    private final CharsRef term;
     private final float weight;
 
-    public WeightedSynonym(String term, float weight) {
+    public WeightedSynonym(CharsRef term, float weight) {
       this.term = term;
       this.weight = weight;
     }
 
-    public String getTerm() {
+    public CharsRef getTerm() {
       return term;
     }
 
