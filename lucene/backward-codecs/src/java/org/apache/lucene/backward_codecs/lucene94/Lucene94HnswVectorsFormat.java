@@ -27,6 +27,7 @@ import org.apache.lucene.index.SegmentWriteState;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.util.hnsw.HnswGraph;
+import org.apache.lucene.util.hnsw.HnswGraphBuilder;
 
 /**
  * Lucene 9.4 vector format, which encodes numeric vector values and an optional associated graph
@@ -108,29 +109,22 @@ public class Lucene94HnswVectorsFormat extends KnnVectorsFormat {
   static final int VERSION_START = 0;
   static final int VERSION_CURRENT = 1;
 
-  /** Default number of maximum connections per node */
-  public static final int DEFAULT_MAX_CONN = 16;
-  /**
-   * Default number of the size of the queue maintained while searching during a graph construction.
-   */
-  public static final int DEFAULT_BEAM_WIDTH = 100;
-
   /**
    * Controls how many of the nearest neighbor candidates are connected to the new node. Defaults to
-   * {@link Lucene94HnswVectorsFormat#DEFAULT_MAX_CONN}. See {@link HnswGraph} for more details.
+   * {@link HnswGraphBuilder#DEFAULT_MAX_CONN}. See {@link HnswGraph} for more details.
    */
   final int maxConn;
 
   /**
    * The number of candidate neighbors to track while searching the graph for each newly inserted
-   * node. Defaults to to {@link Lucene94HnswVectorsFormat#DEFAULT_BEAM_WIDTH}. See {@link
-   * HnswGraph} for details.
+   * node. Defaults to to {@link HnswGraphBuilder#DEFAULT_BEAM_WIDTH}. See {@link HnswGraph} for
+   * details.
    */
   final int beamWidth;
 
   /** Constructs a format using default graph construction parameters */
   public Lucene94HnswVectorsFormat() {
-    this(DEFAULT_MAX_CONN, DEFAULT_BEAM_WIDTH);
+    this(HnswGraphBuilder.DEFAULT_MAX_CONN, HnswGraphBuilder.DEFAULT_BEAM_WIDTH);
   }
 
   /**

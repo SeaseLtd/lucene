@@ -62,7 +62,7 @@ public class TestKnnGraph extends LuceneTestCase {
 
   private static final String KNN_GRAPH_FIELD = "vector";
 
-  private static int M = Lucene95HnswVectorsFormat.DEFAULT_MAX_CONN;
+  private static int M = HnswGraphBuilder.DEFAULT_MAX_CONN;
 
   private Codec codec;
   private Codec float32Codec;
@@ -80,7 +80,7 @@ public class TestKnnGraph extends LuceneTestCase {
         new Lucene95Codec() {
           @Override
           public KnnVectorsFormat getKnnVectorsFormatForField(String field) {
-            return new Lucene95HnswVectorsFormat(M, Lucene95HnswVectorsFormat.DEFAULT_BEAM_WIDTH);
+            return new Lucene95HnswVectorsFormat(M, HnswGraphBuilder.DEFAULT_BEAM_WIDTH);
           }
         };
 
@@ -92,7 +92,7 @@ public class TestKnnGraph extends LuceneTestCase {
         new Lucene95Codec() {
           @Override
           public KnnVectorsFormat getKnnVectorsFormatForField(String field) {
-            return new Lucene95HnswVectorsFormat(M, Lucene95HnswVectorsFormat.DEFAULT_BEAM_WIDTH);
+            return new Lucene95HnswVectorsFormat(M, HnswGraphBuilder.DEFAULT_BEAM_WIDTH);
           }
         };
 
@@ -103,7 +103,7 @@ public class TestKnnGraph extends LuceneTestCase {
           new Lucene95Codec() {
             @Override
             public KnnVectorsFormat getKnnVectorsFormatForField(String field) {
-              return new Lucene95HnswVectorsFormat(M, Lucene95HnswVectorsFormat.DEFAULT_BEAM_WIDTH);
+              return new Lucene95HnswVectorsFormat(M, HnswGraphBuilder.DEFAULT_BEAM_WIDTH);
             }
           };
     }
@@ -115,7 +115,7 @@ public class TestKnnGraph extends LuceneTestCase {
 
   @After
   public void cleanup() {
-    M = Lucene95HnswVectorsFormat.DEFAULT_MAX_CONN;
+    M = HnswGraphBuilder.DEFAULT_MAX_CONN;
   }
 
   /** Basic test of creating documents in a graph */
@@ -314,10 +314,10 @@ public class TestKnnGraph extends LuceneTestCase {
                     KnnFloatVectorQuery query =
                         new KnnFloatVectorQuery("vector", new float[] {0f, 0.1f}, 5);
                     TopDocs results = searcher.search(query, 5);
-                    StoredFields storedFields = searcher.storedFields();
                     for (ScoreDoc doc : results.scoreDocs) {
                       // map docId to insertion id
-                      doc.doc = Integer.parseInt(storedFields.document(doc.doc).get("id"));
+                      doc.doc =
+                          Integer.parseInt(searcher.getIndexReader().document(doc.doc).get("id"));
                     }
                     assertResults(new int[] {0, 15, 3, 18, 5}, results);
                   } finally {
