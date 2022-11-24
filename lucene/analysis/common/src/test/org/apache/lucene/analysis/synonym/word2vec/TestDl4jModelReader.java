@@ -38,6 +38,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.apache.lucene.tests.util.LuceneTestCase;
+import org.apache.lucene.util.CharsRef;
 import org.junit.Test;
 
 public class TestDl4jModelReader extends LuceneTestCase {
@@ -72,7 +73,7 @@ public class TestDl4jModelReader extends LuceneTestCase {
     Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
     String encodedFirstTerm = "B64:aXQ=";
     assertNotEquals(encodedFirstTerm, firstTerm.getWord());
-    String expectedDecodedFirstTerm = "it";
+    CharsRef expectedDecodedFirstTerm = new CharsRef("it");
     assertEquals(expectedDecodedFirstTerm, firstTerm.getWord());
   }
 
@@ -81,7 +82,8 @@ public class TestDl4jModelReader extends LuceneTestCase {
     byte[] originalInput = "lucene".getBytes(StandardCharsets.UTF_8);
     String B64encodedLuceneTerm = Base64.getEncoder().encodeToString(originalInput);
     String word2vecEncodedLuceneTerm = "B64:" + B64encodedLuceneTerm;
-    assertEquals("lucene", Dl4jModelReader.decodeTerm(word2vecEncodedLuceneTerm));
+    assertArrayEquals(
+        "lucene".toCharArray(), Dl4jModelReader.decodeTerm(word2vecEncodedLuceneTerm));
   }
 
   @Test
