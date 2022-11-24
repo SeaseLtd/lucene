@@ -431,7 +431,7 @@ public class TestRandomChains extends BaseTokenStreamTestCase {
                       for (int i = 0; i < vectorDimension; i++) {
                         vec[i] = random.nextFloat();
                       }
-                      terms.add(new Word2VecSynonymTerm(s, vec));
+                      terms.add(new Word2VecSynonymTerm(new CharsRef(s), vec));
                     }
                     try {
                       return new Word2VecSynonymProvider(
