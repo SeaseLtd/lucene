@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CachingTokenFilter;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
@@ -61,20 +62,6 @@ public class QueryBuilder {
   protected boolean enablePositionIncrements = true;
   protected boolean enableGraphQueries = true;
   protected boolean autoGenerateMultiTermSynonymsPhraseQuery = false;
-
-  /** Wraps a term and boost */
-  public static class TermAndBoost {
-    /** the term */
-    public final BytesRef term;
-    /** the boost */
-    public final float boost;
-
-    /** Creates a new TermAndBoost */
-    public TermAndBoost(BytesRef term, float boost) {
-      this.term = BytesRef.deepCopyOf(term);
-      this.boost = boost;
-    }
-  }
 
   /** Creates a new QueryBuilder using the given analyzer. */
   public QueryBuilder(Analyzer analyzer) {
@@ -384,13 +371,14 @@ public class QueryBuilder {
 
   /** Creates simple boolean query from the cached tokenstream contents */
   protected Query analyzeBoolean(String field, TokenStream stream) throws IOException {
-    TermToBytesRefAttribute termAtt = stream.getAttribute(TermToBytesRefAttribute.class);
+    CharTermAttribute termAtt = stream.getAttribute(CharTermAttribute.class);
     BoostAttribute boostAtt = stream.addAttribute(BoostAttribute.class);
 
     stream.reset();
     List<TermAndBoost> terms = new ArrayList<>();
     while (stream.incrementToken()) {
-      terms.add(new TermAndBoost(termAtt.getBytesRef(), boostAtt.getBoost()));
+      terms.add(new TermAndBoost(
+              new CharsRef(termAtt.buffer(), 0, termAtt.length()), boostAtt.getBoost()));
     }
 
     return newSynonymQuery(field, terms.toArray(TermAndBoost[]::new));
@@ -417,7 +405,7 @@ public class QueryBuilder {
     BooleanQuery.Builder q = newBooleanQuery();
     List<TermAndBoost> currentQuery = new ArrayList<>();
 
-    TermToBytesRefAttribute termAtt = stream.getAttribute(TermToBytesRefAttribute.class);
+    CharTermAttribute termAtt = stream.getAttribute(CharTermAttribute.class);
     PositionIncrementAttribute posIncrAtt = stream.getAttribute(PositionIncrementAttribute.class);
     BoostAttribute boostAtt = stream.addAttribute(BoostAttribute.class);
 
@@ -427,7 +415,8 @@ public class QueryBuilder {
         add(field, q, currentQuery, operator);
         currentQuery.clear();
       }
-      currentQuery.add(new TermAndBoost(termAtt.getBytesRef(), boostAtt.getBoost()));
+      currentQuery.add(new TermAndBoost(
+              new CharsRef(termAtt.buffer(), 0, termAtt.length()), boostAtt.getBoost()));
     }
     add(field, q, currentQuery, operator);
 
@@ -544,14 +533,15 @@ public class QueryBuilder {
             attributes.stream()
                 .map(
                     s -> {
-                      TermToBytesRefAttribute t = s.addAttribute(TermToBytesRefAttribute.class);
+                      CharTermAttribute t = s.addAttribute(CharTermAttribute.class);
                       BoostAttribute b = s.addAttribute(BoostAttribute.class);
-                      return new TermAndBoost(t.getBytesRef(), b.getBoost());
+                      return new TermAndBoost(
+                              new CharsRef(t.buffer(), 0, t.length()), b.getBoost());
                     })
                 .toArray(TermAndBoost[]::new);
         assert terms.length > 0;
         if (terms.length == 1) {
-          positionalQuery = newTermQuery(new Term(field, terms[0].term), terms[0].boost);
+          positionalQuery = newTermQuery(new Term(field, terms[0].term.toString()), terms[0].boost);
         } else {
           positionalQuery = newSynonymQuery(field, terms);
         }
@@ -604,6 +594,7 @@ public class QueryBuilder {
   protected Query newSynonymQuery(String field, TermAndBoost[] terms) {
     SynonymQuery.Builder builder = new SynonymQuery.Builder(field);
     for (TermAndBoost t : terms) {
+
       builder.addTerm(t.term, t.boost);
     }
     return builder.build();

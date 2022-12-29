@@ -19,7 +19,10 @@ package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.io.IOException;
 import java.util.List;
+
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.CharsRef;
+import org.apache.lucene.util.TermAndBoost;
 
 /**
  * Generic synonym provider
@@ -36,34 +39,7 @@ public interface SynonymProvider {
    * @param minAcceptedSimilarity minimal value of cosine similarity between the searched vector and
    *     the retrieved ones
    */
-  List<WeightedSynonym> getSynonyms(
-      CharsRef term, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException;
+  List<TermAndBoost> getSynonyms(
+          BytesRef term, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException;
 
-  /**
-   * Term with the associated weight
-   *
-   * @lucene.experimental
-   */
-  class WeightedSynonym {
-    private final CharsRef term;
-    private final float weight;
-
-    public WeightedSynonym(CharsRef term, float weight) {
-      this.term = term;
-      this.weight = weight;
-    }
-
-    public CharsRef getTerm() {
-      return term;
-    }
-
-    public float getWeight() {
-      return weight;
-    }
-
-    @Override
-    public String toString() {
-      return "WeightedSynonym{term='" + term + '\'' + ", weight=" + weight + '}';
-    }
-  }
 }

@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefBuilder;
+import org.apache.lucene.util.CharsRef;
 import org.apache.lucene.util.RamUsageEstimator;
 
 /**
@@ -40,6 +41,13 @@ public final class Term implements Comparable<Term>, Accountable {
 
   String field;
   BytesRef bytes;
+
+  public Term(String field, CharsRef chars) {
+    this.field = field;
+    BytesRefBuilder builder = new BytesRefBuilder();
+    builder.append(chars);
+    this.bytes = builder.toBytesRef();
+  }
 
   /**
    * Constructs a Term with the given field and bytes.

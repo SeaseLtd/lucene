@@ -83,6 +83,11 @@ public class BytesRefBuilder {
     append(builder.get());
   }
 
+  /** Append the provided bytes to this builder. */
+  public void append(CharsRef ref) {
+    copyChars(ref.chars, ref.offset, ref.length);
+  }
+
   /** Reset this builder to the empty state. */
   public void clear() {
     setLength(0);
