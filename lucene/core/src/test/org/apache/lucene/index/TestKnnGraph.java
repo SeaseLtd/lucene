@@ -397,10 +397,10 @@ public class TestKnnGraph extends LuceneTestCase {
                   try {
                     KnnVectorQuery query = new KnnVectorQuery("vector", new float[] {0f, 0.1f}, 5);
                     TopDocs results = searcher.search(query, 5);
+                    StoredFields storedFields = searcher.storedFields();
                     for (ScoreDoc doc : results.scoreDocs) {
                       // map docId to insertion id
-                      doc.doc =
-                          Integer.parseInt(searcher.getIndexReader().document(doc.doc).get("id"));
+                      doc.doc = Integer.parseInt(storedFields.document(doc.doc).get("id"));
                     }
                     assertResults(new int[] {0, 15, 3, 18, 5}, results);
                   } finally {
