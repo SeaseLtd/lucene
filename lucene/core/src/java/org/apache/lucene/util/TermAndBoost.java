@@ -14,29 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.lucene.util;
 
-package org.apache.lucene.analysis.synonym.word2vec;
+/** Wraps a term and boost */
+public class TermAndBoost {
+  /** the term */
+  public final BytesRef term;
+  /** the boost */
+  public final float boost;
 
-import java.io.IOException;
-import java.util.List;
-import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.TermAndBoost;
-
-/**
- * Generic synonym provider
- *
- * @lucene.experimental
- */
-public interface SynonymProvider {
-
-  /**
-   * SynonymProvider constructor
-   *
-   * @param term we want to find the synonyms
-   * @param maxSynonymsPerTerm maximum number of result returned by the synonym search
-   * @param minAcceptedSimilarity minimal value of cosine similarity between the searched vector and
-   *     the retrieved ones
-   */
-  List<TermAndBoost> getSynonyms(BytesRef term, int maxSynonymsPerTerm, float minAcceptedSimilarity)
-      throws IOException;
+  /** Creates a new TermAndBoost */
+  public TermAndBoost(BytesRef term, float boost) {
+    this.term = BytesRef.deepCopyOf(term);
+    this.boost = boost;
+  }
 }
