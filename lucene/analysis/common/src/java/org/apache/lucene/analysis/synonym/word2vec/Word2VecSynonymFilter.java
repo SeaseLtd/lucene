@@ -23,13 +23,14 @@ import java.util.List;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.synonym.SynonymGraphFilter;
-import org.apache.lucene.analysis.synonym.word2vec.SynonymProvider.WeightedSynonym;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.search.BoostAttribute;
-import org.apache.lucene.util.CharsRef;
+import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.BytesRefBuilder;
+import org.apache.lucene.util.TermAndBoost;
 
 /**
  * Applies single-token synonyms from a Word2Vec trained network to an incoming {@link TokenStream}.
@@ -48,7 +49,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   private final SynonymProvider synonymProvider;
   private final int maxSynonymsPerTerm;
   private final float minAcceptedSimilarity;
-  private final LinkedList<WeightedSynonym> synonymBuffer = new LinkedList<>();
+  private final LinkedList<TermAndBoost> synonymBuffer = new LinkedList<>();
   private State lastState = null;
 
   /**
@@ -81,8 +82,11 @@ public final class Word2VecSynonymFilter extends TokenFilter {
     }
 
     if (input.incrementToken()) {
-      CharsRef term = new CharsRef(termAtt.buffer(), 0, termAtt.length());
-      List<WeightedSynonym> synonyms =
+
+      BytesRefBuilder bytesRefBuilder = new BytesRefBuilder();
+      bytesRefBuilder.copyChars(termAtt.buffer(), 0, termAtt.length());
+      BytesRef term = bytesRefBuilder.get();
+      List<TermAndBoost> synonyms =
           this.synonymProvider.getSynonyms(term, maxSynonymsPerTerm, minAcceptedSimilarity);
       if (synonyms.size() > 0) {
         // The synonyms list does not contain the original term so, the first time it returns the
@@ -100,12 +104,12 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   private void releaseBufferedToken() {
     assert synonymBuffer.size() > 0;
 
-    WeightedSynonym synonym = synonymBuffer.pollFirst();
+    TermAndBoost synonym = synonymBuffer.pollFirst();
     clearAttributes();
     restoreState(this.lastState);
     termAtt.setEmpty();
-    termAtt.append(synonym.getTerm());
-    boostAtt.setBoost(synonym.getWeight());
+    termAtt.append(synonym.term.utf8ToString());
+    boostAtt.setBoost(synonym.boost);
     typeAtt.setType(SynonymGraphFilter.TYPE_SYNONYM);
     posLenAtt.setPositionLength(1);
     posIncrementAtt.setPositionIncrement(0);
