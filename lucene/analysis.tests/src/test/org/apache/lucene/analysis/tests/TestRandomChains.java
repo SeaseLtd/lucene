@@ -103,6 +103,7 @@ import org.apache.lucene.tests.util.TestUtil;
 import org.apache.lucene.tests.util.automaton.AutomatonTestUtil;
 import org.apache.lucene.util.AttributeFactory;
 import org.apache.lucene.util.AttributeSource;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.CharsRef;
 import org.apache.lucene.util.IgnoreRandomChains;
 import org.apache.lucene.util.Version;
@@ -431,7 +432,7 @@ public class TestRandomChains extends BaseTokenStreamTestCase {
                       for (int i = 0; i < vectorDimension; i++) {
                         vec[i] = random.nextFloat();
                       }
-                      terms.add(new Word2VecSynonymTerm(new CharsRef(s), vec));
+                      terms.add(new Word2VecSynonymTerm(new BytesRef(s), vec));
                     }
                     try {
                       return new Word2VecSynonymProvider(
