@@ -70,7 +70,7 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
   }
 
   @Test
-  public void getSynonyms_shouldCheckCorrectSynonymsWeight() throws Exception {
+  public void getSynonyms_shouldReturnSynonymsBoost() throws Exception {
     Word2VecModel model = new Word2VecModel(3, 2);
     model.addTermAndVector(new TermAndVector(new BytesRef("a"), new float[] {10, 10}));
     model.addTermAndVector(new TermAndVector(new BytesRef("b"), new float[] {1, 1}));
@@ -83,13 +83,13 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
         unit.getSynonyms(inputTerm, MAX_SYNONYMS_PER_TERM, MIN_ACCEPTED_SIMILARITY);
 
     BytesRef expectedFirstSynonymTerm = new BytesRef("b");
-    double expectedFirstSynonymWeight = 1.0;
+    double expectedFirstSynonymBoost = 1.0;
     assertEquals(expectedFirstSynonymTerm, actualSynonymsResults.get(0).term);
-    assertEquals(expectedFirstSynonymWeight, actualSynonymsResults.get(0).boost, 0.001f);
+    assertEquals(expectedFirstSynonymBoost, actualSynonymsResults.get(0).boost, 0.001f);
   }
 
   @Test
-  public void forMinAcceptedSimilarity_shouldNotReturnSynonyms() throws Exception {
+  public void noSynonymsWithinAcceptedSimilarity_shouldReturnNoSynonyms() throws Exception {
     Word2VecModel model = new Word2VecModel(4, 2);
     model.addTermAndVector(new TermAndVector(new BytesRef("a"), new float[] {10, 10}));
     model.addTermAndVector(new TermAndVector(new BytesRef("b"), new float[] {-10, -8}));
@@ -105,7 +105,7 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
   }
 
   @Test
-  public void testModel_shouldReturnNormalizedVectors() throws Exception {
+  public void testModel_shouldReturnNormalizedVectors() {
     Word2VecModel model = new Word2VecModel(4, 2);
     model.addTermAndVector(new TermAndVector(new BytesRef("a"), new float[] {10, 10}));
     model.addTermAndVector(new TermAndVector(new BytesRef("b"), new float[] {10, 8}));
@@ -119,14 +119,13 @@ public class TestWord2VecSynonymProvider extends LuceneTestCase {
   }
 
   @Test
-  public void normalizedVector_shouldReturnLength1() throws Exception {
+  public void normalizedVector_shouldReturnModule1() {
     TermAndVector synonymTerm = new TermAndVector(new BytesRef("a"), new float[] {10, 10});
     synonymTerm.normalizeVector();
     float[] vector = synonymTerm.getVector();
     float len = 0;
     for (int i = 0; i < vector.length; i++) {
       len += vector[i] * vector[i];
-      System.out.println(vector[i]);
     }
     assertEquals(1, Math.sqrt(len), 0.0001f);
   }

@@ -63,7 +63,7 @@ public class Word2VecModel extends VectorValues implements RandomAccessVectorVal
   public void addTermAndVector(TermAndVector modelEntry) {
     modelEntry.normalizeVector();
     this.data[loadedCount++] = modelEntry;
-    this.word2Vec.put(modelEntry.getWord(), modelEntry);
+    this.word2Vec.put(modelEntry.getTerm(), modelEntry);
   }
 
   @Override
@@ -71,14 +71,14 @@ public class Word2VecModel extends VectorValues implements RandomAccessVectorVal
     return data[ord].getVector();
   }
 
-  public float[] vectorValue(BytesRef word) {
-    TermAndVector term = word2Vec.get(word);
-    return (term == null) ? null : term.getVector();
+  public float[] vectorValue(BytesRef term) {
+    TermAndVector entry = word2Vec.get(term);
+    return (entry == null) ? null : entry.getVector();
   }
 
   @Override
   public BytesRef binaryValue(int targetOrd) throws IOException {
-    return data[targetOrd].getWord();
+    return data[targetOrd].getTerm();
   }
 
   @Override

@@ -50,7 +50,7 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   private final int maxSynonymsPerTerm;
   private final float minAcceptedSimilarity;
   private final LinkedList<TermAndBoost> synonymBuffer = new LinkedList<>();
-  private State lastState = null;
+  private State lastState;
 
   /**
    * Apply previously built synonymProvider to incoming tokens.

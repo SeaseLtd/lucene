@@ -43,37 +43,37 @@ import org.junit.Test;
 
 public class TestDl4jModelReader extends LuceneTestCase {
 
-  private static final String WORD2VEC_MODEL_FILE = "word2vec-model.zip";
-  private static final String WORD2VEC_MODEL_FILE_EMPTY = "word2vec-model-empty.zip";
-  private static final String WORD2VEC_MODEL_FILE_SMALLER_VECTORS =
-      "word2vec-model-corrupted-smaller-vector.zip";
+  private static final String MODEL_FILE = "word2vec-model.zip";
+  private static final String MODEL_EMPTY_FILE = "word2vec-empty-model.zip";
+  private static final String CORRUPTED_VECTOR_DIMENSION_MODEL_FILE =
+      "word2vec-corrupted-vector-dimension-model.zip";
 
-  InputStream stream = TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE);
-  Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE, stream);
+  InputStream stream = TestDl4jModelReader.class.getResourceAsStream(MODEL_FILE);
+  Dl4jModelReader unit = new Dl4jModelReader(MODEL_FILE, stream);
 
   @Test
-  public void read_zipFile_shouldCheckCorrectDictionarySize() throws Exception {
+  public void read_zipFileWithMetadata_shouldReturnDictionarySize() throws Exception {
     Word2VecModel model = unit.read();
     long expectedDictionarySize = 235;
     assertEquals(expectedDictionarySize, model.size());
   }
 
   @Test
-  public void read_zipFile_shouldCheckCorrectVectorLength() throws Exception {
+  public void read_zipFileWithMetadata_shouldReturnVectorLength() throws Exception {
     Word2VecModel model = unit.read();
     int expectedVectorDimension = 100;
     assertEquals(expectedVectorDimension, model.dimension());
   }
 
   @Test
-  public void read_zipFile_shouldCheckCorrectTermDecoding() throws Exception {
+  public void read_zipFile_shouldReturnDecodedTerm() throws Exception {
     Word2VecModel model = unit.read();
     BytesRef expectedDecodedFirstTerm = new BytesRef("it");
     assertEquals(expectedDecodedFirstTerm, model.binaryValue(0));
   }
 
   @Test
-  public void base64encodedTerm_shouldCheckCorrectTermDecoding() throws Exception {
+  public void decodeTerm_encodedTerm_shouldReturnDecodedTerm() throws Exception {
     byte[] originalInput = "lucene".getBytes(StandardCharsets.UTF_8);
     String B64encodedLuceneTerm = Base64.getEncoder().encodeToString(originalInput);
     String word2vecEncodedLuceneTerm = "B64:" + B64encodedLuceneTerm;
@@ -83,17 +83,17 @@ public class TestDl4jModelReader extends LuceneTestCase {
   @Test
   public void read_EmptyZipFile_shouldThrowException() throws Exception {
     try (InputStream stream =
-        TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE_EMPTY)) {
-      Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE_EMPTY, stream);
+        TestDl4jModelReader.class.getResourceAsStream(MODEL_EMPTY_FILE)) {
+      Dl4jModelReader unit = new Dl4jModelReader(MODEL_EMPTY_FILE, stream);
       expectThrows(UnsupportedEncodingException.class, unit::read);
     }
   }
 
   @Test
-  public void read_smallerVectorModelFile_shouldThrowException() throws Exception {
+  public void read_corruptedVectorDimensionModelFile_shouldThrowException() throws Exception {
     try (InputStream stream =
-        TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE_SMALLER_VECTORS)) {
-      Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE_SMALLER_VECTORS, stream);
+        TestDl4jModelReader.class.getResourceAsStream(CORRUPTED_VECTOR_DIMENSION_MODEL_FILE)) {
+      Dl4jModelReader unit = new Dl4jModelReader(CORRUPTED_VECTOR_DIMENSION_MODEL_FILE, stream);
       expectThrows(RuntimeException.class, unit::read);
     }
   }

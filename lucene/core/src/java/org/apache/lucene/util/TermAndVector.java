@@ -26,16 +26,16 @@ import java.util.Locale;
  */
 public class TermAndVector {
 
-  private final BytesRef word;
+  private final BytesRef term;
   private final float[] vector;
 
-  public TermAndVector(BytesRef word, float[] vector) {
-    this.word = word;
+  public TermAndVector(BytesRef term, float[] vector) {
+    this.term = term;
     this.vector = vector;
   }
 
-  public BytesRef getWord() {
-    return this.word;
+  public BytesRef getTerm() {
+    return this.term;
   }
 
   public float[] getVector() {
@@ -59,7 +59,7 @@ public class TermAndVector {
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder(this.word.utf8ToString());
+    StringBuilder builder = new StringBuilder(this.term.utf8ToString());
     builder.append(" [");
     if (vector.length > 0) {
       for (int i = 0; i < vector.length - 1; i++) {
