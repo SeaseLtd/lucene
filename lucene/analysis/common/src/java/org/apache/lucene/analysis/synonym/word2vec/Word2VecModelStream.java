@@ -18,6 +18,7 @@
 package org.apache.lucene.analysis.synonym.word2vec;
 
 import java.util.stream.Stream;
+import org.apache.lucene.util.TermAndVector;
 
 /**
  * Word2VecModelStream is a class that embeds the Word2VecSynonymTerm stream and some properties
@@ -29,10 +30,10 @@ public class Word2VecModelStream {
 
   private final int dictionarySize;
   private final int vectorDimension;
-  private final Stream<Word2VecSynonymTerm> modelStream;
+  private final Stream<TermAndVector> modelStream;
 
   public Word2VecModelStream(
-      int dictionarySize, int vectorDimension, Stream<Word2VecSynonymTerm> modelStream) {
+      int dictionarySize, int vectorDimension, Stream<TermAndVector> modelStream) {
     this.dictionarySize = dictionarySize;
     this.vectorDimension = vectorDimension;
     this.modelStream = modelStream;
@@ -46,7 +47,7 @@ public class Word2VecModelStream {
     return vectorDimension;
   }
 
-  public Stream<Word2VecSynonymTerm> getModelStream() {
+  public Stream<TermAndVector> getModelStream() {
     return modelStream;
   }
 }

@@ -79,6 +79,7 @@ module org.apache.lucene.analysis.common {
   exports org.apache.lucene.analysis.sr;
   exports org.apache.lucene.analysis.sv;
   exports org.apache.lucene.analysis.synonym;
+  exports org.apache.lucene.analysis.synonym.word2vec;
   exports org.apache.lucene.analysis.ta;
   exports org.apache.lucene.analysis.te;
   exports org.apache.lucene.analysis.th;
@@ -144,8 +145,6 @@ module org.apache.lucene.analysis.common {
       org.apache.lucene.core;
   opens org.apache.lucene.analysis.tr to
       org.apache.lucene.core;
-
-  exports org.apache.lucene.analysis.synonym.word2vec;
 
   provides org.apache.lucene.analysis.CharFilterFactory with
       org.apache.lucene.analysis.charfilter.HTMLStripCharFilterFactory,

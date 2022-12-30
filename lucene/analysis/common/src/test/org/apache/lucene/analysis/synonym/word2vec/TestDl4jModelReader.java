@@ -37,14 +37,19 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
+
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.TermAndVector;
 import org.junit.Test;
 
 public class TestDl4jModelReader extends LuceneTestCase {
 
   private static final String WORD2VEC_MODEL_FILE = "word2vec-model.zip";
   private static final String WORD2VEC_MODEL_FILE_EMPTY = "word2vec-model-empty.zip";
+  private static final String WORD2VEC_MODEL_FILE_LESS_ROWS = "word2vec-model-corrupted-less-rows.zip";
+  private static final String WORD2VEC_MODEL_FILE_SMALLER_VECTORS = "word2vec-model-corrupted-smaller-vector.zip";
 
   InputStream stream = TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE);
   Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE, stream);
@@ -61,7 +66,7 @@ public class TestDl4jModelReader extends LuceneTestCase {
   @Test
   public void read_zipFile_shouldCheckCorrectVectorLength() throws Exception {
     Word2VecModelStream modelStream = unit.read();
-    Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
+    TermAndVector firstTerm = modelStream.getModelStream().findFirst().get();
     assertEquals(modelStream.getVectorDimension(), firstTerm.getVector().length);
     int expectedVectorDimension = 100;
     assertEquals(expectedVectorDimension, modelStream.getVectorDimension());
@@ -70,7 +75,7 @@ public class TestDl4jModelReader extends LuceneTestCase {
   @Test
   public void read_zipFile_shouldCheckCorrectTermDecoding() throws Exception {
     Word2VecModelStream modelStream = unit.read();
-    Word2VecSynonymTerm firstTerm = modelStream.getModelStream().findFirst().get();
+    TermAndVector firstTerm = modelStream.getModelStream().findFirst().get();
     String encodedFirstTerm = "B64:aXQ=";
     assertNotEquals(encodedFirstTerm, firstTerm.getWord());
     BytesRef expectedDecodedFirstTerm = new BytesRef("it");
@@ -93,4 +98,15 @@ public class TestDl4jModelReader extends LuceneTestCase {
       expectThrows(UnsupportedEncodingException.class, unit::read);
     }
   }
+
+  @Test
+  public void read_smallerVectorModelFile_shouldThrowException() throws Exception {
+    try (InputStream stream =
+        TestDl4jModelReader.class.getResourceAsStream(WORD2VEC_MODEL_FILE_SMALLER_VECTORS)) {
+      Dl4jModelReader unit = new Dl4jModelReader(WORD2VEC_MODEL_FILE_SMALLER_VECTORS, stream);
+      Word2VecModelStream read = unit.read();
+//      expectThrows(RuntimeException.class, unit::read);
+    }
+  }
+
 }

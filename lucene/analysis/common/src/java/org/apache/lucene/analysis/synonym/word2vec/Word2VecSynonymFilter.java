@@ -76,43 +76,31 @@ public final class Word2VecSynonymFilter extends TokenFilter {
   public boolean incrementToken() throws IOException {
 
     if (!synonymBuffer.isEmpty()) {
-      // We still have pending outputs from a prior synonym match:
-      releaseBufferedToken();
+      TermAndBoost synonym = synonymBuffer.pollFirst();
+      clearAttributes();
+      restoreState(this.lastState);
+      termAtt.setEmpty();
+      termAtt.append(synonym.term.utf8ToString());
+      boostAtt.setBoost(synonym.boost);
+      typeAtt.setType(SynonymGraphFilter.TYPE_SYNONYM);
+      posLenAtt.setPositionLength(1);
+      posIncrementAtt.setPositionIncrement(0);
       return true;
     }
 
     if (input.incrementToken()) {
-
       BytesRefBuilder bytesRefBuilder = new BytesRefBuilder();
       bytesRefBuilder.copyChars(termAtt.buffer(), 0, termAtt.length());
       BytesRef term = bytesRefBuilder.get();
       List<TermAndBoost> synonyms =
           this.synonymProvider.getSynonyms(term, maxSynonymsPerTerm, minAcceptedSimilarity);
       if (synonyms.size() > 0) {
-        // The synonyms list does not contain the original term so, the first time it returns the
-        // original term
-        // and store the other synonyms in a buffer. These synonyms will be returned in a future
-        // call
         this.lastState = captureState();
         this.synonymBuffer.addAll(synonyms);
       }
       return true;
     }
     return false;
-  }
-
-  private void releaseBufferedToken() {
-    assert synonymBuffer.size() > 0;
-
-    TermAndBoost synonym = synonymBuffer.pollFirst();
-    clearAttributes();
-    restoreState(this.lastState);
-    termAtt.setEmpty();
-    termAtt.append(synonym.term.utf8ToString());
-    boostAtt.setBoost(synonym.boost);
-    typeAtt.setType(SynonymGraphFilter.TYPE_SYNONYM);
-    posLenAtt.setPositionLength(1);
-    posIncrementAtt.setPositionIncrement(0);
   }
 
   @Override

@@ -25,24 +25,25 @@ import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.tests.analysis.BaseTokenStreamTestCase;
 import org.apache.lucene.tests.analysis.MockTokenizer;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.TermAndVector;
 import org.junit.Test;
 
 public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
 
   @Test
   public void synonymExpansion_oneCandidate_shouldBeExpanded() throws Exception {
-    List<Word2VecSynonymTerm> word2VecModel =
+    List<TermAndVector> word2VecModel =
         List.of(
-            new Word2VecSynonymTerm(new BytesRef("a"), new float[] {10, 10}),
-            new Word2VecSynonymTerm(new BytesRef("b"), new float[] {10, 8}),
-            new Word2VecSynonymTerm(new BytesRef("c"), new float[] {9, 10}),
-            new Word2VecSynonymTerm(new BytesRef("d"), new float[] {1, 1}),
-            new Word2VecSynonymTerm(new BytesRef("e"), new float[] {99, 101}),
-            new Word2VecSynonymTerm(new BytesRef("f"), new float[] {1, 10}));
+            new TermAndVector(new BytesRef("a"), new float[] {10, 10}),
+            new TermAndVector(new BytesRef("b"), new float[] {10, 8}),
+            new TermAndVector(new BytesRef("c"), new float[] {9, 10}),
+            new TermAndVector(new BytesRef("d"), new float[] {1, 1}),
+            new TermAndVector(new BytesRef("e"), new float[] {99, 101}),
+            new TermAndVector(new BytesRef("f"), new float[] {1, 10}));
 
     Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(word2VecModel));
 
-    Word2VecSynonymTerm inputTerm = word2VecModel.get(0);
+    TermAndVector inputTerm = word2VecModel.get(0);
 
     float similarityWithB =
         VectorSimilarityFunction.COSINE.compare(
@@ -75,21 +76,21 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
 
   @Test
   public void synonymExpansion_twoCandidates_shouldBothBeExpanded() throws Exception {
-    List<Word2VecSynonymTerm> word2VecModel =
+    List<TermAndVector> word2VecModel =
         List.of(
-            new Word2VecSynonymTerm(new BytesRef("a"), new float[] {10, 10}),
-            new Word2VecSynonymTerm(new BytesRef("b"), new float[] {10, 8}),
-            new Word2VecSynonymTerm(new BytesRef("c"), new float[] {9, 10}),
-            new Word2VecSynonymTerm(new BytesRef("d"), new float[] {1, 1}),
-            new Word2VecSynonymTerm(new BytesRef("e"), new float[] {99, 101}),
-            new Word2VecSynonymTerm(new BytesRef("f"), new float[] {1, 10}),
-            new Word2VecSynonymTerm(new BytesRef("post"), new float[] {-10, -11}),
-            new Word2VecSynonymTerm(new BytesRef("after"), new float[] {-8, -10}));
+            new TermAndVector(new BytesRef("a"), new float[] {10, 10}),
+            new TermAndVector(new BytesRef("b"), new float[] {10, 8}),
+            new TermAndVector(new BytesRef("c"), new float[] {9, 10}),
+            new TermAndVector(new BytesRef("d"), new float[] {1, 1}),
+            new TermAndVector(new BytesRef("e"), new float[] {99, 101}),
+            new TermAndVector(new BytesRef("f"), new float[] {1, 10}),
+            new TermAndVector(new BytesRef("post"), new float[] {-10, -11}),
+            new TermAndVector(new BytesRef("after"), new float[] {-8, -10}));
 
     Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(word2VecModel));
 
-    Word2VecSynonymTerm firstInputTerm = word2VecModel.get(0);
-    Word2VecSynonymTerm secondInputTerm = word2VecModel.get(6);
+    TermAndVector firstInputTerm = word2VecModel.get(0);
+    TermAndVector secondInputTerm = word2VecModel.get(6);
 
     float similarityWithB =
         VectorSimilarityFunction.COSINE.compare(
@@ -135,12 +136,12 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
   @Test
   public void synonymExpansion_forMinAcceptedSimilarity_shouldExpandToNoneSynonyms()
       throws Exception {
-    List<Word2VecSynonymTerm> word2VecModel =
+    List<TermAndVector> word2VecModel =
         List.of(
-            new Word2VecSynonymTerm(new BytesRef("a"), new float[] {10, 10}),
-            new Word2VecSynonymTerm(new BytesRef("b"), new float[] {-10, -8}),
-            new Word2VecSynonymTerm(new BytesRef("c"), new float[] {-9, -10}),
-            new Word2VecSynonymTerm(new BytesRef("f"), new float[] {-1, -10}));
+            new TermAndVector(new BytesRef("a"), new float[] {10, 10}),
+            new TermAndVector(new BytesRef("b"), new float[] {-10, -8}),
+            new TermAndVector(new BytesRef("c"), new float[] {-9, -10}),
+            new TermAndVector(new BytesRef("f"), new float[] {-1, -10}));
 
     Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(toStream(word2VecModel));
 
@@ -173,10 +174,10 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
     };
   }
 
-  private Word2VecModelStream toStream(List<Word2VecSynonymTerm> list) {
+  private Word2VecModelStream toStream(List<TermAndVector> list) {
     int dictionarySize = list.size();
     int vectorDimension = list.get(0).size();
-    Stream<Word2VecSynonymTerm> modelStream = list.stream();
+    Stream<TermAndVector> modelStream = list.stream();
     return new Word2VecModelStream(dictionarySize, vectorDimension, modelStream);
   }
 }

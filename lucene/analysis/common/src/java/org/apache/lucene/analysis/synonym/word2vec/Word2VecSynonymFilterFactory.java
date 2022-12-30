@@ -38,28 +38,28 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
   /** SPI name */
   public static final String NAME = "Word2VecSynonym";
 
-  public static final int DEFAULT_MAX_SYNONYMS_PER_TERM = 10;
-  public static final float DEFAULT_MIN_ACCEPTED_SIMILARITY = 0.7f;
+  public static final int DEFAULT_MAX_SYNONYMS_PER_TERM = 5;
+  public static final float DEFAULT_MIN_ACCEPTED_SIMILARITY = 0.8f;
 
   private final int maxSynonymsPerTerm;
   private final float minAcceptedSimilarity;
   private final Word2VecSupportedFormats format;
-  private final String word2vecModel;
+  private final String word2vecModelFileName;
 
-  private SynonymProvider synonymProvider = null;
+  private SynonymProvider synonymProvider;
 
   public Word2VecSynonymFilterFactory(Map<String, String> args) {
     super(args);
     this.maxSynonymsPerTerm = getInt(args, "maxSynonymsPerTerm", DEFAULT_MAX_SYNONYMS_PER_TERM);
     this.minAcceptedSimilarity =
         getFloat(args, "minAcceptedSimilarity", DEFAULT_MIN_ACCEPTED_SIMILARITY);
-    this.word2vecModel = require(args, "model");
+    this.word2vecModelFileName = require(args, "model");
 
     String modelFormat = get(args, "format", "dl4j").toUpperCase(Locale.ROOT);
     try {
       this.format = Word2VecSupportedFormats.valueOf(modelFormat);
     } catch (IllegalArgumentException exc) {
-      throw new IllegalArgumentException("Model format not supported", exc);
+      throw new IllegalArgumentException("Model format '" + modelFormat + "' not supported", exc);
     }
 
     if (!args.isEmpty()) {
@@ -87,8 +87,6 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
 
   @Override
   public TokenStream create(TokenStream input) {
-    // if the synonymProvider is null, it means there's actually no synonyms... just return the
-    // original stream
     return synonymProvider == null
         ? input
         : new Word2VecSynonymFilter(
@@ -98,6 +96,6 @@ public class Word2VecSynonymFilterFactory extends TokenFilterFactory
   @Override
   public void inform(ResourceLoader loader) throws IOException {
     this.synonymProvider =
-        Word2VecSynonymProviderFactory.getSynonymProvider(loader, word2vecModel, format);
+        Word2VecSynonymProviderFactory.getSynonymProvider(loader, word2vecModelFileName, format);
   }
 }
