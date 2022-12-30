@@ -21,12 +21,12 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Generic synonym provider interface. Each class extending this interface must be able to read a
- * Word2Vec model format
+ * Each class extending this interface must be able to read a Word2Vec model format and provide a
+ * Word2VecModel with normalized vectors
  *
  * @lucene.experimental
  */
 public interface Word2VecModelReader extends Closeable {
 
-  Word2VecModelStream read() throws IOException;
+  Word2VecModel read() throws IOException;
 }
