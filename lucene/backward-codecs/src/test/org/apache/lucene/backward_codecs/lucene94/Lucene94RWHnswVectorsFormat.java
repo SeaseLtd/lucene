@@ -22,7 +22,6 @@ import org.apache.lucene.codecs.KnnVectorsReader;
 import org.apache.lucene.codecs.KnnVectorsWriter;
 import org.apache.lucene.index.SegmentReadState;
 import org.apache.lucene.index.SegmentWriteState;
-import org.apache.lucene.util.hnsw.HnswGraphBuilder;
 
 public final class Lucene94RWHnswVectorsFormat extends Lucene94HnswVectorsFormat {
   static final int DIRECT_MONOTONIC_BLOCK_SHIFT = 16;
@@ -33,8 +32,7 @@ public final class Lucene94RWHnswVectorsFormat extends Lucene94HnswVectorsFormat
 
   @Override
   public KnnVectorsWriter fieldsWriter(SegmentWriteState state) throws IOException {
-    return new Lucene94HnswVectorsWriter(
-        state, HnswGraphBuilder.DEFAULT_MAX_CONN, HnswGraphBuilder.DEFAULT_BEAM_WIDTH);
+    return new Lucene94HnswVectorsWriter(state, DEFAULT_MAX_CONN, DEFAULT_BEAM_WIDTH);
   }
 
   @Override

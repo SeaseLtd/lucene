@@ -78,7 +78,9 @@ public class Word2VecSynonymProvider implements SynonymProvider {
       NeighborQueue synonyms =
           HnswGraphSearcher.search(
               query,
-              maxSynonymsPerTerm,
+              // The query vector is in the model. When looking for the top-k
+              // it's always the nearest neighbour of itself so, we look for the top-k+1
+              maxSynonymsPerTerm + 1,
               word2VecModel,
               VECTOR_ENCODING,
               SIMILARITY_FUNCTION,
@@ -92,6 +94,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
         int id = synonyms.pop();
 
         BytesRef synonym = word2VecModel.binaryValue(id);
+        // We remove the original query term
         if (!synonym.equals(term) && similarity >= minAcceptedSimilarity) {
           result.addFirst(new TermAndBoost(synonym, similarity));
         }

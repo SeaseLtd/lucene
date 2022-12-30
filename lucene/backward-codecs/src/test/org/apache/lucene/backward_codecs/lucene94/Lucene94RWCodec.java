@@ -18,7 +18,6 @@ package org.apache.lucene.backward_codecs.lucene94;
 
 import org.apache.lucene.codecs.KnnVectorsFormat;
 import org.apache.lucene.codecs.perfield.PerFieldKnnVectorsFormat;
-import org.apache.lucene.util.hnsw.HnswGraphBuilder;
 
 /** Implements the Lucene 9.4 index format for backwards compat testing */
 public class Lucene94RWCodec extends Lucene94Codec {
@@ -36,7 +35,8 @@ public class Lucene94RWCodec extends Lucene94Codec {
   public Lucene94RWCodec() {
     defaultKnnVectorsFormat =
         new Lucene94RWHnswVectorsFormat(
-            HnswGraphBuilder.DEFAULT_MAX_CONN, HnswGraphBuilder.DEFAULT_BEAM_WIDTH);
+            Lucene94HnswVectorsFormat.DEFAULT_MAX_CONN,
+            Lucene94HnswVectorsFormat.DEFAULT_BEAM_WIDTH);
   }
 
   @Override

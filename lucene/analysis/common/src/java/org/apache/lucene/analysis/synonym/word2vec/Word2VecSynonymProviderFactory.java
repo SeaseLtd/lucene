@@ -37,30 +37,25 @@ public class Word2VecSynonymProviderFactory {
   private static Map<String, SynonymProvider> word2vecSynonymProviders = new ConcurrentHashMap<>();
 
   public static SynonymProvider getSynonymProvider(
-      ResourceLoader loader, String model, Word2VecSupportedFormats format) throws IOException {
-    SynonymProvider synonymProvider = word2vecSynonymProviders.get(model);
+      ResourceLoader loader, String modelFileName, Word2VecSupportedFormats format) throws IOException {
+    SynonymProvider synonymProvider = word2vecSynonymProviders.get(modelFileName);
     if (synonymProvider == null) {
-      try (InputStream stream = loader.openResource(model)) {
-        try (Word2VecModelReader reader = getModelReader(model, format, stream)) {
+      try (InputStream stream = loader.openResource(modelFileName)) {
+        try (Word2VecModelReader reader = getModelReader(modelFileName, format, stream)) {
           synonymProvider = new Word2VecSynonymProvider(reader.read());
         }
       }
-      word2vecSynonymProviders.put(model, synonymProvider);
+      word2vecSynonymProviders.put(modelFileName, synonymProvider);
     }
     return synonymProvider;
   }
 
   private static Word2VecModelReader getModelReader(
-      String model, Word2VecSupportedFormats format, InputStream stream) {
+      String modelFileName, Word2VecSupportedFormats format, InputStream stream) {
     switch (format) {
       case DL4J:
-        return new Dl4jModelReader(model, stream);
+        return new Dl4jModelReader(modelFileName, stream);
     }
     return null;
-  }
-
-  // keeps unit test from blowing out memory
-  public static void clearModels() {
-    word2vecSynonymProviders.clear();
   }
 }
