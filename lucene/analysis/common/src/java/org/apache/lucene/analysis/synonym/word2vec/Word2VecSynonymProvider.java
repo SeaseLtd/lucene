@@ -31,6 +31,7 @@ import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.index.VectorValues;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.TermAndBoost;
+import org.apache.lucene.util.TermAndVector;
 import org.apache.lucene.util.hnsw.HnswGraph;
 import org.apache.lucene.util.hnsw.HnswGraphBuilder;
 import org.apache.lucene.util.hnsw.HnswGraphSearcher;
@@ -47,9 +48,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
   private static final VectorSimilarityFunction SIMILARITY_FUNCTION =
       VectorSimilarityFunction.DOT_PRODUCT;
   private static final VectorEncoding VECTOR_ENCODING = VectorEncoding.FLOAT32;
-  private static final long SEED = System.currentTimeMillis();
-
-  private final SynonymVector synonymVector;
+  private final Word2VecModel word2VecModel;
   private final HnswGraph hnswGraph;
 
   /**
@@ -64,107 +63,96 @@ public class Word2VecSynonymProvider implements SynonymProvider {
     }
 
     // Create the provider which will feed the vectors for the graph
-    synonymVector = new SynonymVector(vectorStream);
+    word2VecModel = new Word2VecModel(vectorStream);
     HnswGraphBuilder<?> builder =
         HnswGraphBuilder.create(
-            synonymVector,
+            word2VecModel,
             VECTOR_ENCODING,
             SIMILARITY_FUNCTION,
             DEFAULT_MAX_CONN,
             DEFAULT_BEAM_WIDTH,
-            SEED);
-    this.hnswGraph = builder.build(synonymVector.copy());
+            HnswGraphBuilder.randSeed);
+    this.hnswGraph = builder.build(word2VecModel.copy());
   }
 
   @Override
   public List<TermAndBoost> getSynonyms(
-      BytesRef token, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException {
+      BytesRef term, int maxSynonymsPerTerm, float minAcceptedSimilarity) throws IOException {
 
-    if (token == null) {
+    if (term == null) {
       throw new IllegalArgumentException("Term must not be null");
     }
 
     LinkedList<TermAndBoost> result = new LinkedList<>();
-    float[] query = synonymVector.vectorValue(token);
+    float[] query = word2VecModel.vectorValue(term);
     if (query != null) {
       NeighborQueue synonyms =
           HnswGraphSearcher.search(
               query,
               maxSynonymsPerTerm,
-              synonymVector,
+              word2VecModel,
               VECTOR_ENCODING,
               SIMILARITY_FUNCTION,
               hnswGraph,
               null,
-              Integer.MAX_VALUE);
+              word2VecModel.dictionarySize);
 
       int size = synonyms.size();
       for (int i = 0; i < size; i++) {
         float similarity = synonyms.topScore();
         int id = synonyms.pop();
-        Word2VecSynonymTerm term = synonymVector.getSynonymTerm(id);
-        if (!term.getWord().equals(token) && similarity >= minAcceptedSimilarity) {
-          result.addFirst(new TermAndBoost(term.getWord(), similarity));
+
+        BytesRef synonym = word2VecModel.binaryValue(id);
+        if (!synonym.equals(term) && similarity >= minAcceptedSimilarity) {
+          result.addFirst(new TermAndBoost(synonym, similarity));
         }
       }
     }
     return result;
   }
 
-  static class SynonymVector extends VectorValues implements RandomAccessVectorValues {
+  static class Word2VecModel extends VectorValues implements RandomAccessVectorValues {
 
     private final int dictionarySize;
     private final int vectorDimension;
-    private final Word2VecSynonymTerm[] data;
-    private final Map<BytesRef, Word2VecSynonymTerm> word2Vec;
+    private final TermAndVector[] data;
+    private final Map<BytesRef, TermAndVector> word2Vec;
 
     private int currentIndex = -1;
 
-    public SynonymVector(Word2VecModelStream vectorStream) {
+    public Word2VecModel(Word2VecModelStream vectorStream) {
       this.dictionarySize = vectorStream.getDictionarySize();
       this.vectorDimension = vectorStream.getVectorDimension();
-      this.data = new Word2VecSynonymTerm[dictionarySize];
+      this.data = new TermAndVector[dictionarySize];
       this.word2Vec = new HashMap<>();
 
-      AtomicInteger loaded = new AtomicInteger(0);
+      AtomicInteger loadedCount = new AtomicInteger(0);
       vectorStream
           .getModelStream()
-          .parallel()
           .forEach(
-              synTerm -> {
-                float[] vector = synTerm.getVector();
-                // TODO implement performance test to verify if this check slows down the process
-                if (this.vectorDimension != vector.length) {
-                  throw new IllegalArgumentException(
-                      "Word2Vec model file corrupted. Declared vectors of size "
-                          + this.vectorDimension
-                          + " but found vector of size "
-                          + synTerm.getVector().length
-                          + " at line "
-                          + loaded.get()
-                          + 2); // +2 because the first line of the model file is the header
-                }
+              modelEntry -> {
+                float[] vector = modelEntry.getVector();
                 // normalize vector so, in the future, we can use the dot_product instead of the
                 // cosine similarity function
-                synTerm.normalizeVector();
-                this.data[loaded.getAndIncrement()] = synTerm;
-                this.word2Vec.put(synTerm.getWord(), synTerm);
+                modelEntry.normalizeVector();
+                this.data[loadedCount.getAndIncrement()] = modelEntry;
+                this.word2Vec.put(modelEntry.getWord(), modelEntry);
               });
 
-      if (loaded.get() != dictionarySize) {
+      if (loadedCount.get() != dictionarySize) {
         throw new IllegalArgumentException(
             "Word2Vec model file corrupted. Declared "
                 + dictionarySize
                 + " records but found "
-                + loaded.get());
+                + loadedCount.get());
       }
     }
 
-    private SynonymVector(
+    private Word2VecModel(
         int dictionarySize,
         int vectorDimension,
-        Word2VecSynonymTerm[] data,
-        Map<BytesRef, Word2VecSynonymTerm> word2Vec) {
+        TermAndVector[] data,
+        Map<BytesRef, TermAndVector> word2Vec) {
       this.dictionarySize = dictionarySize;
       this.vectorDimension = vectorDimension;
       this.data = data;
@@ -176,18 +164,14 @@ public class Word2VecSynonymProvider implements SynonymProvider {
       return data[ord].getVector();
     }
 
-    public Word2VecSynonymTerm getSynonymTerm(int ord) {
-      return data[ord];
-    }
-
     public float[] vectorValue(BytesRef word) {
-      Word2VecSynonymTerm term = word2Vec.get(word);
+      TermAndVector term = word2Vec.get(word);
       return (term == null) ? null : term.getVector();
     }
 
     @Override
     public BytesRef binaryValue(int targetOrd) throws IOException {
-      return null;
+      return data[targetOrd].getWord();
     }
 
     @Override
@@ -227,7 +211,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
 
     @Override
     public RandomAccessVectorValues copy() throws IOException {
-      return new SynonymVector(this.dictionarySize, this.vectorDimension, this.data, this.word2Vec);
+      return new Word2VecModel(this.dictionarySize, this.vectorDimension, this.data, this.word2Vec);
     }
   }
 }

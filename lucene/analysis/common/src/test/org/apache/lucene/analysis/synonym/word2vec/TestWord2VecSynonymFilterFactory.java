@@ -67,7 +67,7 @@ public class TestWord2VecSynonymFilterFactory extends BaseTokenStreamFactoryTest
               tokenFilterFactory(
                   FACTORY_NAME, "model", WORD2VEC_MODEL_FILE, "format", "bogusValue");
             });
-    assertTrue(expected.getMessage().contains("Model format not supported"));
+    assertTrue(expected.getMessage().contains("Model format 'BOGUSVALUE' not supported"));
   }
 
   @Test

@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.analysis.synonym.word2vec;
+package org.apache.lucene.util;
 
 import java.util.Locale;
-import org.apache.lucene.util.BytesRef;
 
 /**
  * Word2Vec unit composed by a term with the associated vector
  *
  * @lucene.experimental
  */
-public class Word2VecSynonymTerm {
+public class TermAndVector {
 
   private final BytesRef word;
   private final float[] vector;
 
-  public Word2VecSynonymTerm(BytesRef word, float[] vector) {
+  public TermAndVector(BytesRef word, float[] vector) {
     this.word = word;
     this.vector = vector;
   }
