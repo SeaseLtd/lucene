@@ -90,7 +90,7 @@ import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.stempel.StempelStemmer;
 import org.apache.lucene.analysis.synonym.SynonymMap;
 import org.apache.lucene.analysis.synonym.word2vec.SynonymProvider;
-import org.apache.lucene.analysis.synonym.word2vec.Word2VecModelStream;
+import org.apache.lucene.analysis.synonym.word2vec.Word2VecModel;
 import org.apache.lucene.analysis.synonym.word2vec.Word2VecSynonymProvider;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.tests.analysis.BaseTokenStreamTestCase;
@@ -423,20 +423,19 @@ public class TestRandomChains extends BaseTokenStreamTestCase {
               put(
                   SynonymProvider.class,
                   random -> {
-                    ArrayList<TermAndVector> terms = new ArrayList<>();
                     final int numEntries = atLeast(10);
                     final int vectorDimension = random.nextInt(99) + 1;
+                    Word2VecModel model = new Word2VecModel(numEntries, vectorDimension);
                     for (int j = 0; j < numEntries; j++) {
                       String s = TestUtil.randomSimpleString(random, 10, 20);
                       float[] vec = new float[vectorDimension];
                       for (int i = 0; i < vectorDimension; i++) {
                         vec[i] = random.nextFloat();
                       }
-                      terms.add(new TermAndVector(new BytesRef(s), vec));
+                      model.addTermAndVector(new TermAndVector(new BytesRef(s), vec));
                     }
                     try {
-                      return new Word2VecSynonymProvider(
-                          new Word2VecModelStream(numEntries, vectorDimension, terms.stream()));
+                      return new Word2VecSynonymProvider(model);
                     } catch (IOException e) {
                       Rethrow.rethrow(e);
                       return null; // unreachable code

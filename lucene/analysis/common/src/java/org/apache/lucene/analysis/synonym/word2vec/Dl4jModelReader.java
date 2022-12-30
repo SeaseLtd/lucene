@@ -25,9 +25,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.IllegalFormatException;
 import java.util.Locale;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.lucene.util.BytesRef;
@@ -57,7 +55,7 @@ public class Dl4jModelReader implements Word2VecModelReader {
   }
 
   @Override
-  public Word2VecModelStream read() throws IOException {
+  public Word2VecModel read() throws IOException {
 
     ZipEntry entry;
     while ((entry = word2VecModelZipFile.getNextEntry()) != null) {
@@ -71,30 +69,34 @@ public class Dl4jModelReader implements Word2VecModelReader {
         int dictionarySize = Integer.parseInt(headerValues[0]);
         int vectorDimension = Integer.parseInt(headerValues[1]);
 
-        Stream<TermAndVector> modelStream =
-            reader
-                .lines()
-                .map(
-                    line -> {
-                      String[] tokens = line.split(" ");
-                      BytesRef term = decodeTerm(tokens[0]);
+        Word2VecModel model = new Word2VecModel(dictionarySize, vectorDimension);
+        reader
+            .lines()
+            .forEach(
+                line -> {
+                  String[] tokens = line.split(" ");
+                  BytesRef term = decodeTerm(tokens[0]);
 
-                      float[] vector = new float[tokens.length - 1];
+                  float[] vector = new float[tokens.length - 1];
 
-                      if (vectorDimension != vector.length) {
-                        throw new RuntimeException(
-                          String.format("Word2Vec model file corrupted. " +
-                                  "Declared vectors of size %d but found vector of size %d for word %s (%s)",
-                                  vectorDimension, vector.length, tokens[0], term.utf8ToString()));
-                      }
+                  if (vectorDimension != vector.length) {
+                    throw new RuntimeException(
+                        String.format(
+                            Locale.ROOT,
+                            "Word2Vec model file corrupted. "
+                                + "Declared vectors of size %d but found vector of size %d for word %s (%s)",
+                            vectorDimension,
+                            vector.length,
+                            tokens[0],
+                            term.utf8ToString()));
+                  }
 
-                      for (int i = 1; i < tokens.length; i++) {
-                        vector[i - 1] = Float.parseFloat(tokens[i]);
-                      }
-                      return new TermAndVector(term, vector);
-                    });
-
-        return new Word2VecModelStream(dictionarySize, vectorDimension, modelStream);
+                  for (int i = 1; i < tokens.length; i++) {
+                    vector[i - 1] = Float.parseFloat(tokens[i]);
+                  }
+                  model.addTermAndVector(new TermAndVector(term, vector));
+                });
+        return model;
       }
     }
     throw new UnsupportedEncodingException(
