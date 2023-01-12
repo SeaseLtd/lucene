@@ -82,8 +82,7 @@ public class TestDl4jModelReader extends LuceneTestCase {
 
   @Test
   public void read_EmptyZipFile_shouldThrowException() throws Exception {
-    try (InputStream stream =
-        TestDl4jModelReader.class.getResourceAsStream(MODEL_EMPTY_FILE)) {
+    try (InputStream stream = TestDl4jModelReader.class.getResourceAsStream(MODEL_EMPTY_FILE)) {
       Dl4jModelReader unit = new Dl4jModelReader(MODEL_EMPTY_FILE, stream);
       expectThrows(UnsupportedEncodingException.class, unit::read);
     }
