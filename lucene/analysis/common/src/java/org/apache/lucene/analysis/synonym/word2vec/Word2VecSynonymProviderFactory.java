@@ -37,7 +37,8 @@ public class Word2VecSynonymProviderFactory {
   private static Map<String, SynonymProvider> word2vecSynonymProviders = new ConcurrentHashMap<>();
 
   public static SynonymProvider getSynonymProvider(
-      ResourceLoader loader, String modelFileName, Word2VecSupportedFormats format) throws IOException {
+      ResourceLoader loader, String modelFileName, Word2VecSupportedFormats format)
+      throws IOException {
     SynonymProvider synonymProvider = word2vecSynonymProviders.get(modelFileName);
     if (synonymProvider == null) {
       try (InputStream stream = loader.openResource(modelFileName)) {

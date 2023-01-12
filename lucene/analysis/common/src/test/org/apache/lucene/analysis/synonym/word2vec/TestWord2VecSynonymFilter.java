@@ -42,13 +42,13 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
 
     Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(model);
 
-    float similarityAWithB =  // 0.9969
+    float similarityAWithB = // 0.9969
         VectorSimilarityFunction.COSINE.compare(model.vectorValue(0), model.vectorValue(1));
-    float similarityAWithC =  // 0.9993
+    float similarityAWithC = // 0.9993
         VectorSimilarityFunction.COSINE.compare(model.vectorValue(0), model.vectorValue(2));
-    float similarityAWithD =  // 1.0
+    float similarityAWithD = // 1.0
         VectorSimilarityFunction.COSINE.compare(model.vectorValue(0), model.vectorValue(3));
-    float similarityAWithE =  // 0.9999
+    float similarityAWithE = // 0.9999
         VectorSimilarityFunction.COSINE.compare(model.vectorValue(0), model.vectorValue(4));
     // float similarityAWithF = 0.8166  (not accepted)
 
@@ -67,9 +67,10 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
         }); // boost
     a.close();
   }
+
   @Test
   public void synonymExpansion_oneCandidate_shouldBeExpandedWithTopKSynonyms() throws Exception {
-    int maxSynonymPerTerm = 3;
+    int maxSynonymPerTerm = 2;
     float minAcceptedSimilarity = 0.9f;
     Word2VecModel model = new Word2VecModel(5, 2);
     model.addTermAndVector(new TermAndVector(new BytesRef("a"), new float[] {10, 10}));
@@ -80,11 +81,11 @@ public class TestWord2VecSynonymFilter extends BaseTokenStreamTestCase {
 
     Word2VecSynonymProvider SynonymProvider = new Word2VecSynonymProvider(model);
 
-    //float similarityAWithB = 0.9969  (not in top 2)
-    //float similarityAWithC = 0.9993  (not in top 2)
-    float similarityAWithD =  // 1.0
+    // float similarityAWithB = 0.9969  (not in top 2)
+    // float similarityAWithC = 0.9993  (not in top 2)
+    float similarityAWithD = // 1.0
         VectorSimilarityFunction.COSINE.compare(model.vectorValue(0), model.vectorValue(3));
-    float similarityAWithE =  // 0.9999
+    float similarityAWithE = // 0.9999
         VectorSimilarityFunction.COSINE.compare(model.vectorValue(0), model.vectorValue(4));
 
     Analyzer a = getAnalyzer(SynonymProvider, maxSynonymPerTerm, minAcceptedSimilarity);
