@@ -20,7 +20,6 @@ package org.apache.lucene.analysis.synonym.word2vec;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.lucene.index.VectorValues;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.TermAndVector;
 import org.apache.lucene.util.hnsw.RandomAccessVectorValues;
@@ -31,16 +30,13 @@ import org.apache.lucene.util.hnsw.RandomAccessVectorValues;
  *
  * @lucene.experimental
  */
-public class Word2VecModel extends VectorValues implements RandomAccessVectorValues {
+public class Word2VecModel implements RandomAccessVectorValues<float[]> {
 
   private final int dictionarySize;
   private final int vectorDimension;
   private final TermAndVector[] data;
   private final Map<BytesRef, TermAndVector> word2Vec;
-
   private int loadedCount = 0;
-
-  private int currentIndex = -1;
 
   public Word2VecModel(int dictionarySize, int vectorDimension) {
     this.dictionarySize = dictionarySize;
@@ -76,7 +72,6 @@ public class Word2VecModel extends VectorValues implements RandomAccessVectorVal
     return (entry == null) ? null : entry.getVector();
   }
 
-  @Override
   public BytesRef binaryValue(int targetOrd) throws IOException {
     return data[targetOrd].getTerm();
   }
@@ -92,32 +87,7 @@ public class Word2VecModel extends VectorValues implements RandomAccessVectorVal
   }
 
   @Override
-  public float[] vectorValue() throws IOException {
-    return vectorValue(currentIndex);
-  }
-
-  @Override
-  public int docID() {
-    return currentIndex;
-  }
-
-  @Override
-  public int nextDoc() throws IOException {
-    return advance(currentIndex + 1);
-  }
-
-  @Override
-  public int advance(int target) throws IOException {
-    if (target >= 0 && target < dictionarySize) {
-      currentIndex = target;
-    } else {
-      currentIndex = NO_MORE_DOCS;
-    }
-    return currentIndex;
-  }
-
-  @Override
-  public RandomAccessVectorValues copy() throws IOException {
+  public RandomAccessVectorValues<float[]> copy() throws IOException {
     return new Word2VecModel(this.dictionarySize, this.vectorDimension, this.data, this.word2Vec);
   }
 }

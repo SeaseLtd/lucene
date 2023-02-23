@@ -53,7 +53,7 @@ public class Word2VecSynonymProvider implements SynonymProvider {
   public Word2VecSynonymProvider(Word2VecModel model) throws IOException {
     word2VecModel = model;
 
-    HnswGraphBuilder<?> builder =
+    HnswGraphBuilder<float[]> builder =
         HnswGraphBuilder.create(
             word2VecModel,
             VECTOR_ENCODING,
