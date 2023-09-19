@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.lucene.util;
+package org.apache.lucene.internal.vectorization;
 
-import java.util.logging.Logger;
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.FloatVector;
 import jdk.incubator.vector.IntVector;
@@ -26,27 +25,13 @@ import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
 
-/** A VectorUtil provider implementation that leverages the Panama Vector API. */
-final class VectorUtilPanamaProvider implements VectorUtilProvider {
+final class PanamaVectorUtilSupport implements VectorUtilSupport {
 
-  /**
-   * The bit size of the preferred species (this field is package private to allow the lookup to
-   * load it).
-   */
-  static final int INT_SPECIES_PREF_BIT_SIZE = IntVector.SPECIES_PREFERRED.vectorBitSize();
+  private static final int INT_SPECIES_PREF_BIT_SIZE = IntVector.SPECIES_PREFERRED.vectorBitSize();
 
   private static final VectorSpecies<Float> PREF_FLOAT_SPECIES = FloatVector.SPECIES_PREFERRED;
   private static final VectorSpecies<Byte> PREF_BYTE_SPECIES;
   private static final VectorSpecies<Short> PREF_SHORT_SPECIES;
-
-  /**
-   * x86 and less than 256-bit vectors.
-   *
-   * <p>it could be that it has only AVX1 and integer vectors are fast. it could also be that it has
-   * no AVX and integer vectors are extremely slow. don't use integer vectors to avoid landmines.
-   */
-  private static final boolean IS_AMD64_WITHOUT_AVX2 =
-      Constants.OS_ARCH.equals("amd64") && INT_SPECIES_PREF_BIT_SIZE < 256;
 
   static {
     if (INT_SPECIES_PREF_BIT_SIZE >= 256) {
@@ -62,14 +47,10 @@ final class VectorUtilPanamaProvider implements VectorUtilProvider {
     }
   }
 
-  VectorUtilPanamaProvider() {
-    if (INT_SPECIES_PREF_BIT_SIZE < 128) {
-      throw new UnsupportedOperationException(
-          "Vector bit size is less than 128: " + INT_SPECIES_PREF_BIT_SIZE);
-    }
-    var log = Logger.getLogger(getClass().getName());
-    log.info(
-        "Java vector incubator API enabled; uses preferredBitSize=" + INT_SPECIES_PREF_BIT_SIZE);
+  private final boolean useIntegerVectors;
+
+  PanamaVectorUtilSupport(boolean useIntegerVectors) {
+    this.useIntegerVectors = useIntegerVectors;
   }
 
   @Override
@@ -201,7 +182,7 @@ final class VectorUtilPanamaProvider implements VectorUtilProvider {
       norm1 += elem1 * elem1;
       norm2 += elem2 * elem2;
     }
-    return (float) (sum / Math.sqrt(norm1 * norm2));
+    return (float) (sum / Math.sqrt((double) norm1 * (double) norm2));
   }
 
   @Override
@@ -279,7 +260,7 @@ final class VectorUtilPanamaProvider implements VectorUtilProvider {
     int res = 0;
     // only vectorize if we'll at least enter the loop a single time, and we have at least 128-bit
     // vectors (256-bit on intel to dodge performance landmines)
-    if (a.length >= 16 && IS_AMD64_WITHOUT_AVX2 == false) {
+    if (a.length >= 16 && useIntegerVectors) {
       // compute vectorized dot product consistent with VPDPBUSD instruction
       if (INT_SPECIES_PREF_BIT_SIZE >= 256) {
         // optimized 256/512 bit implementation, processes 8/16 bytes at a time
@@ -336,7 +317,7 @@ final class VectorUtilPanamaProvider implements VectorUtilProvider {
     int norm2 = 0;
     // only vectorize if we'll at least enter the loop a single time, and we have at least 128-bit
     // vectors (256-bit on intel to dodge performance landmines)
-    if (a.length >= 16 && IS_AMD64_WITHOUT_AVX2 == false) {
+    if (a.length >= 16 && useIntegerVectors) {
       if (INT_SPECIES_PREF_BIT_SIZE >= 256) {
         // optimized 256/512 bit implementation, processes 8/16 bytes at a time
         int upperBound = PREF_BYTE_SPECIES.loopBound(a.length);
@@ -426,7 +407,7 @@ final class VectorUtilPanamaProvider implements VectorUtilProvider {
     int res = 0;
     // only vectorize if we'll at least enter the loop a single time, and we have at least 128-bit
     // vectors (256-bit on intel to dodge performance landmines)
-    if (a.length >= 16 && IS_AMD64_WITHOUT_AVX2 == false) {
+    if (a.length >= 16 && useIntegerVectors) {
       if (INT_SPECIES_PREF_BIT_SIZE >= 256) {
         // optimized 256/512 bit implementation, processes 8/16 bytes at a time
         int upperBound = PREF_BYTE_SPECIES.loopBound(a.length);

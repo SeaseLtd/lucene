@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.lucene.util;
+package org.apache.lucene.internal.vectorization;
 
-/** The default VectorUtil provider implementation. */
-final class VectorUtilDefaultProvider implements VectorUtilProvider {
+final class DefaultVectorUtilSupport implements VectorUtilSupport {
 
-  VectorUtilDefaultProvider() {}
+  DefaultVectorUtilSupport() {}
 
   @Override
   public float dotProduct(float[] a, float[] b) {
@@ -102,7 +101,7 @@ final class VectorUtilDefaultProvider implements VectorUtilProvider {
       norm1 += elem1 * elem1;
       norm2 += elem2 * elem2;
     }
-    return (float) (sum / Math.sqrt(norm1 * norm2));
+    return (float) (sum / Math.sqrt((double) norm1 * (double) norm2));
   }
 
   @Override

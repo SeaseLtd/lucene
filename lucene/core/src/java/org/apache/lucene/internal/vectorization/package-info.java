@@ -14,23 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.lucene.search;
 
 /**
- * Used by {@link BulkScorer}s that need to pass a {@link Scorable} to {@link
- * LeafCollector#setScorer}.
+ * Internal implementations to support SIMD vectorization. This package is for internal Lucene use
+ * only!
+ *
+ * @see org.apache.lucene.internal.vectorization.VectorizationProvider
  */
-final class ScoreAndDoc extends Scorable {
-  float score;
-  int doc = -1;
-
-  @Override
-  public int docID() {
-    return doc;
-  }
-
-  @Override
-  public float score() {
-    return score;
-  }
-}
+package org.apache.lucene.internal.vectorization;

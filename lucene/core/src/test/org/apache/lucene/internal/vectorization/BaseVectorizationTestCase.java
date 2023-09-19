@@ -14,28 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.lucene.util.automaton;
+package org.apache.lucene.internal.vectorization;
 
-import java.util.Arrays;
-import java.util.Collections;
 import org.apache.lucene.tests.util.LuceneTestCase;
-import org.apache.lucene.util.ArrayUtil;
-import org.apache.lucene.util.BytesRef;
+import org.junit.BeforeClass;
 
-public class TestDaciukMihovAutomatonBuilder extends LuceneTestCase {
+public abstract class BaseVectorizationTestCase extends LuceneTestCase {
 
-  public void testLargeTerms() {
-    byte[] b10k = new byte[10_000];
-    Arrays.fill(b10k, (byte) 'a');
-    IllegalArgumentException e =
-        expectThrows(
-            IllegalArgumentException.class,
-            () -> DaciukMihovAutomatonBuilder.build(Collections.singleton(new BytesRef(b10k))));
-    assertTrue(
-        e.getMessage()
-            .startsWith("This builder doesn't allow terms that are larger than 1,000 characters"));
+  protected static final VectorizationProvider LUCENE_PROVIDER = new DefaultVectorizationProvider();
+  protected static final VectorizationProvider PANAMA_PROVIDER = VectorizationProvider.lookup(true);
 
-    byte[] b1k = ArrayUtil.copyOfSubArray(b10k, 0, 1000);
-    DaciukMihovAutomatonBuilder.build(Collections.singleton(new BytesRef(b1k))); // no exception
+  @BeforeClass
+  public static void beforeClass() throws Exception {
+    assumeTrue(
+        "Test only works when JDK's vector incubator module is enabled.",
+        PANAMA_PROVIDER.getClass() != LUCENE_PROVIDER.getClass());
   }
 }

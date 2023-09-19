@@ -17,11 +17,14 @@
 
 package org.apache.lucene.util;
 
+import org.apache.lucene.internal.vectorization.VectorUtilSupport;
+import org.apache.lucene.internal.vectorization.VectorizationProvider;
+
 /** Utilities for computations with numeric arrays */
 public final class VectorUtil {
 
-  // visible for testing
-  static final VectorUtilProvider PROVIDER = VectorUtilProvider.lookup();
+  private static final VectorUtilSupport IMPL =
+      VectorizationProvider.getInstance().getVectorUtilSupport();
 
   private VectorUtil() {}
 
@@ -34,7 +37,9 @@ public final class VectorUtil {
     if (a.length != b.length) {
       throw new IllegalArgumentException("vector dimensions differ: " + a.length + "!=" + b.length);
     }
-    return PROVIDER.dotProduct(a, b);
+    float r = IMPL.dotProduct(a, b);
+    assert Float.isFinite(r);
+    return r;
   }
 
   /**
@@ -46,7 +51,9 @@ public final class VectorUtil {
     if (a.length != b.length) {
       throw new IllegalArgumentException("vector dimensions differ: " + a.length + "!=" + b.length);
     }
-    return PROVIDER.cosine(a, b);
+    float r = IMPL.cosine(a, b);
+    assert Float.isFinite(r);
+    return r;
   }
 
   /** Returns the cosine similarity between the two vectors. */
@@ -54,7 +61,7 @@ public final class VectorUtil {
     if (a.length != b.length) {
       throw new IllegalArgumentException("vector dimensions differ: " + a.length + "!=" + b.length);
     }
-    return PROVIDER.cosine(a, b);
+    return IMPL.cosine(a, b);
   }
 
   /**
@@ -66,7 +73,9 @@ public final class VectorUtil {
     if (a.length != b.length) {
       throw new IllegalArgumentException("vector dimensions differ: " + a.length + "!=" + b.length);
     }
-    return PROVIDER.squareDistance(a, b);
+    float r = IMPL.squareDistance(a, b);
+    assert Float.isFinite(r);
+    return r;
   }
 
   /** Returns the sum of squared differences of the two vectors. */
@@ -74,7 +83,7 @@ public final class VectorUtil {
     if (a.length != b.length) {
       throw new IllegalArgumentException("vector dimensions differ: " + a.length + "!=" + b.length);
     }
-    return PROVIDER.squareDistance(a, b);
+    return IMPL.squareDistance(a, b);
   }
 
   /**
@@ -139,7 +148,7 @@ public final class VectorUtil {
     if (a.length != b.length) {
       throw new IllegalArgumentException("vector dimensions differ: " + a.length + "!=" + b.length);
     }
-    return PROVIDER.dotProduct(a, b);
+    return IMPL.dotProduct(a, b);
   }
 
   /**
@@ -153,5 +162,21 @@ public final class VectorUtil {
     // divide by 2 * 2^14 (maximum absolute value of product of 2 signed bytes) * len
     float denom = (float) (a.length * (1 << 15));
     return 0.5f + dotProduct(a, b) / denom;
+  }
+
+  /**
+   * Checks if a float vector only has finite components.
+   *
+   * @param v bytes containing a vector
+   * @return the vector for call-chaining
+   * @throws IllegalArgumentException if any component of vector is not finite
+   */
+  public static float[] checkFinite(float[] v) {
+    for (int i = 0; i < v.length; i++) {
+      if (!Float.isFinite(v[i])) {
+        throw new IllegalArgumentException("non-finite value at vector[" + i + "]=" + v[i]);
+      }
+    }
+    return v;
   }
 }
