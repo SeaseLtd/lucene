@@ -66,7 +66,6 @@ import org.apache.lucene.store.IndexOutput;
  * @lucene.experimental
  */
 public final class Lucene99FlatVectorsFormat extends FlatVectorsFormat {
-
   static final String META_CODEC_NAME = "Lucene99FlatVectorsFormatMeta";
   static final String VECTOR_DATA_CODEC_NAME = "Lucene99FlatVectorsFormatData";
   static final String META_EXTENSION = "vemf";
